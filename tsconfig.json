@@ -2,16 +2,29 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+      "@/*": ["./*"]
+    },
+    "allowJs": true,            // Include JS files in type checking
+    "checkJs": false,           // Optional: set to true if you want TS to check JS files
+    "jsx": "react-native",      // Proper JSX handling for React Native
+    "noEmit": true,             // Do not output compiled files (Expo handles this)
+    "resolveJsonModule": true,  // Allows importing JSON files
+    "esModuleInterop": true
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.js",
+    "**/*.jsx",
+    "app/**/*"                  // Include all JS/TS files inside app folder
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js",
+    "dist"
   ]
 }
