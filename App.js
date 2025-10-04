@@ -2,8 +2,15 @@ import { enableScreens } from 'react-native-screens';
 enableScreens();
 
 import React from 'react';
+import { TextInput } from 'react-native'; // <-- import TextInput for default props
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+// ✅ Set global defaults for all TextInput fields
+TextInput.defaultProps = TextInput.defaultProps || {};
+TextInput.defaultProps.placeholderTextColor = '#999'; // placeholder color
+TextInput.defaultProps.selectionColor = '#006699';     // cursor color
+TextInput.defaultProps.style = { color: '#000' };      // typed text color
 
 // ✅ Authentication
 import LoginScreen from './screens/LoginScreen';
@@ -177,7 +184,6 @@ export default function App() {
           component={FerryCrewScreen} 
           options={{ title: 'Ferry Operations' }} 
         />
-        {/* ✅ Added */}
         <Stack.Screen 
           name="FerriesScreen" 
           component={FerriesScreen} 
