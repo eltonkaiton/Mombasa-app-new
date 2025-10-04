@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
-const API_BASE_URL = "http://192.168.100.8:5000";
+const API_BASE_URL = "https://mombasa-backend.onrender.com";
 
 const MyBookingsScreen = () => {
   const [bookings, setBookings] = useState([]);

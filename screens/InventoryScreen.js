@@ -19,9 +19,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 
-const API_URL = 'http://192.168.100.8:5000/inventory/items';
-const SUPPLIERS_URL = 'http://192.168.100.8:5000/inventory/suppliers';
-const ORDER_URL = 'http://192.168.100.8:5000/inventory/orders';
+const API_URL = 'https://mombasa-backend.onrender.com/inventory/items';
+const SUPPLIERS_URL = 'https://mombasa-backend.onrender.com/inventory/suppliers';
+const ORDER_URL = 'https://mombasa-backend.onrender.com/inventory/orders';
 
 export default function InventoryScreen({ navigation }) {
   const [inventory, setInventory] = useState([]);

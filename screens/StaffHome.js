@@ -23,12 +23,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 const { height } = Dimensions.get('window');
 
-const API_URL = 'http://192.168.100.8:5000/staff-bookings';
-const FERRIES_URL = 'http://192.168.100.8:5000/ferries';
-const APPROVE_URL = 'http://192.168.100.8:5000/staff-bookings/approve';
-const REJECT_URL = 'http://192.168.100.8:5000/staff-bookings/reject';
-const ASSIGN_FERRY_URL = 'http://192.168.100.8:5000/staff-bookings/assign-ferry';
-const RATE_FERRY_URL = 'http://192.168.100.8:5000/staff-bookings/rate-ferry';
+const API_URL = 'https://mombasa-backend.onrender.com/staff-bookings';
+const FERRIES_URL = 'https://mombasa-backend.onrender.com/ferries';
+const APPROVE_URL = 'https://mombasa-backend.onrender.com/staff-bookings/approve';
+const REJECT_URL = 'https://mombasa-backend.onrender.com/staff-bookings/reject';
+const ASSIGN_FERRY_URL = 'https://mombasa-backend.onrender.com/staff-bookings/assign-ferry';
+const RATE_FERRY_URL = 'https://mombasa-backend.onrender.com/staff-bookings/rate-ferry';
 
 const StaffHome = ({ navigation }) => {
   const [bookings, setBookings] = useState([]);

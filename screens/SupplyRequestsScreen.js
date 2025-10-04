@@ -17,7 +17,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 
-const API_URL = 'http://192.168.100.8:5000/suppliers';
+const API_URL = 'https://mombasa-backend.onrender.com/suppliers';
 
 export default function SupplierSupplyScreen() {
   const [orders, setOrders] = useState([]);

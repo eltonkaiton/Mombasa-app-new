@@ -36,7 +36,7 @@ const BookingScreen = () => {
   const [loading, setLoading] = useState(false);
 
   // ✅ FIX: remove /api prefix
-  const API_BASE_URL = 'http://192.168.100.8:5000';
+  const API_BASE_URL = 'https://mombasa-backend.onrender.com';
 
   const ferryRoutes = [
     'Likoni - Island',

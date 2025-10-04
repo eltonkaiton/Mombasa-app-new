@@ -13,7 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 // 🔥 Replace with your PC's local IPv4
-const BASE_URL = "http://192.168.100.8:5000";
+const BASE_URL = "https://mombasa-backend.onrender.com";
 
 // ✅ Backend login URLs
 const USER_LOGIN_URL = `${BASE_URL}/users/login`;
