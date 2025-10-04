@@ -2,7 +2,9 @@
 node_modules
 npm-debug.log
 yarn-error.log
-package-lock.json
+
+# ✅ Keep lockfile for dependency consistency
+# (DO NOT ignore package-lock.json or yarn.lock)
 
 # Ignore build and cache folders
 .expo
@@ -19,14 +21,16 @@ temp
 .DS_Store
 Thumbs.db
 
-# Ignore backend and server-side code
-
+# Ignore backend and server-side code (optional)
 server
 
+# Optional: Ignore local environment files
+.env
+.env*.local
 
-# Temporarily ignore assets with permission errors
-assets/images/*
+# Temporarily ignore assets with permission issues (optional)
+# assets/images/*
 
-# Ignore Git files
+# Ignore Git files (these are not needed in EAS build environment)
 .git
 .gitignore
