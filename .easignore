@@ -1,28 +1,32 @@
-# Ignore editor configs
-.vscode
-.idea
-
-# Ignore OS/system files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Ignore node modules (will be reinstalled on server)
+# Ignore node modules
 node_modules
-
-# Ignore package lock if not needed
+npm-debug.log
+yarn-error.log
 package-lock.json
-yarn.lock
 
-# Ignore git stuff
-.git
-.gitignore
-
-# Ignore Expo caches
+# Ignore build and cache folders
 .expo
 .expo-shared
-
-# Ignore test and build artifacts
 dist
 build
-*.log
+tmp
+temp
+.cache
+
+# Ignore editor and system files
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Ignore backend and server-side code
+
+server
+
+
+# Temporarily ignore assets with permission errors
+assets/images/*
+
+# Ignore Git files
+.git
+.gitignore
