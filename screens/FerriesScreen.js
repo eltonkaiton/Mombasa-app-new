@@ -16,7 +16,7 @@ import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // API Endpoint
-const FERRIES_URL = 'http://172.17.12.150:5000/ferries';
+const FERRIES_URL = 'https://mombasa-backend.onrender.com/ferries';
 
 const FerriesScreen = () => {
   const [ferries, setFerries] = useState([]);
@@ -140,24 +140,28 @@ const FerriesScreen = () => {
       {/* Add/Edit Ferry Form */}
       <View style={styles.addForm}>
         <Text style={styles.formTitle}>{editingId ? 'Edit Ferry' : 'Add New Ferry'}</Text>
+
+        <Text style={styles.inputLabel}>Ferry Name</Text>
         <TextInput
-          placeholder="Ferry Name"
           style={styles.input}
           value={name}
           onChangeText={setName}
         />
+
+        <Text style={styles.inputLabel}>Capacity</Text>
         <TextInput
-          placeholder="Capacity"
           style={styles.input}
           value={capacity}
           onChangeText={setCapacity}
           keyboardType="numeric"
         />
+
         <TouchableOpacity style={styles.addButton} onPress={submitFerry} disabled={submitting}>
           <Text style={styles.addButtonText}>
             {submitting ? (editingId ? 'Updating...' : 'Adding...') : editingId ? 'Update Ferry' : 'Add Ferry'}
           </Text>
         </TouchableOpacity>
+
         {editingId && (
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: '#dc3545', marginTop: 5 }]}
@@ -212,6 +216,7 @@ const styles = StyleSheet.create({
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   addForm: { backgroundColor: '#fff', padding: 15, borderRadius: 8, marginBottom: 15, elevation: 2 },
   formTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
+  inputLabel: { fontWeight: '600', marginBottom: 5 },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',

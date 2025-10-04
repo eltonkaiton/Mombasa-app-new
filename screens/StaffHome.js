@@ -280,7 +280,7 @@ const StaffHome = ({ navigation }) => {
           <td>${b.travel_time}</td>
           <td>${b.route}</td>
           <td>${b.num_passengers || '-'}</td>
-          <td>${b.amount_paid}</td>
+          <td>${b.amount_paid === 0 ? 'N/A' : b.amount_paid}</td>
           <td>${b.payment_method || '-'}</td>
           <td>${b.payment_code || '-'}</td>
           <td>${b.ferry_name || 'Not assigned'}</td>
@@ -322,7 +322,7 @@ const StaffHome = ({ navigation }) => {
               <div class="row"><span class="label">Time:</span> ${booking.travel_time}</div>
               <div class="row"><span class="label">Route:</span> ${booking.route}</div>
               <div class="row"><span class="label">Passengers:</span> ${booking.num_passengers || '-'}</div>
-              <div class="row"><span class="label">Amount Paid:</span> KES ${booking.amount_paid}</div>
+              <div class="row"><span class="label">Amount Paid:</span> ${booking.amount_paid === 0 ? 'N/A' : `KES ${booking.amount_paid}`}</div>
               <div class="row"><span class="label">Payment Method:</span> ${booking.payment_method || '-'}</div>
               <div class="row"><span class="label">Payment Code:</span> ${booking.payment_code || '-'}</div>
               <div class="row"><span class="label">Ferry:</span> ${booking.ferry_name || 'Not assigned'}</div>
@@ -349,7 +349,7 @@ const StaffHome = ({ navigation }) => {
       <Text>Travel Time: {item.travel_time}</Text>
       <Text>Route: {item.route}</Text>
       <Text>Passengers: {item.num_passengers}</Text>
-      <Text>Amount Paid: {item.amount_paid}</Text>
+      <Text>Amount Paid: {item.amount_paid === 0 ? 'N/A' : item.amount_paid}</Text>
       {item.booking_type !== 'passenger' && (
         <>
           <Text>Payment Method: {item.payment_method}</Text>

@@ -12,15 +12,13 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
-// 🔥 Replace with your PC's local IPv4
 const BASE_URL = "https://mombasa-backend.onrender.com";
 
-// ✅ Backend login URLs
 const USER_LOGIN_URL = `${BASE_URL}/users/login`;
 const SUPPLIER_LOGIN_URL = `${BASE_URL}/suppliers/login`;
 const INVENTORY_LOGIN_URL = `${BASE_URL}/inventory/login`;
 const FINANCE_LOGIN_URL = `${BASE_URL}/finance/login`;
-const STAFF_LOGIN_URL = `${BASE_URL}/staff/login`; // ✅ matches backend
+const STAFF_LOGIN_URL = `${BASE_URL}/staff/login`;
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -30,7 +28,6 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState('user');
 
-  // Get backend URL based on login type
   const getLoginUrl = () => {
     switch (loginType) {
       case 'supplier': return SUPPLIER_LOGIN_URL;
@@ -41,7 +38,6 @@ const LoginScreen = () => {
     }
   };
 
-  // Toggle login type
   const handleToggleLoginType = () => {
     const types = ['user', 'supplier', 'inventory', 'finance', 'staff'];
     const currentIndex = types.indexOf(loginType);
@@ -49,7 +45,6 @@ const LoginScreen = () => {
     setLoginType(types[nextIndex]);
   };
 
-  // Normalize role for frontend routing
   const normalizeRole = (role, category, loginType) => {
     let normalized = (role || category || loginType).toLowerCase();
     if (normalized === 'operating') normalized = 'staff';
@@ -57,7 +52,6 @@ const LoginScreen = () => {
     return normalized;
   };
 
-  // Handle login
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert('Validation Error', 'Please enter both email and password');
@@ -87,7 +81,6 @@ const LoginScreen = () => {
         const { full_name, name, role, category } = data.user;
         const userRole = normalizeRole(role, category, loginType);
 
-        // Save token & user info
         if (userRole === 'staff') {
           await AsyncStorage.setItem('staffToken', data.token);
         } else {
@@ -99,7 +92,6 @@ const LoginScreen = () => {
 
         Alert.alert('Success', 'Logged in successfully');
 
-        // Navigate based on role
         let destination;
         switch (userRole) {
           case 'admin': destination = 'AdminHome'; break;
@@ -142,9 +134,12 @@ const LoginScreen = () => {
         </Text>
       </TouchableOpacity>
 
+      {/* Email Field */}
+      <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Enter your email"
+        placeholderTextColor="#999"
         keyboardType="email-address"
         autoCapitalize="none"
         value={email}
@@ -152,13 +147,18 @@ const LoginScreen = () => {
         editable={!loading}
       />
 
+      {/* Password Field */}
+      <Text style={styles.label}>Password</Text>
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder="Enter your password"
+        placeholderTextColor="#999"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
         editable={!loading}
+        textContentType="password"
+        autoCapitalize="none"
       />
 
       {loading ? (
@@ -195,6 +195,12 @@ const styles = StyleSheet.create({
   },
   toggleLoginType: { alignItems: 'center', marginBottom: 20 },
   toggleText: { color: '#0077b6', fontSize: 16, fontWeight: '500' },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0077b6',
+    marginBottom: 5,
+  },
   input: {
     backgroundColor: '#fff',
     borderColor: '#ccc',
@@ -204,6 +210,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 20,
     fontSize: 16,
+    color: '#000',
   },
   registerLink: { marginTop: 20, alignItems: 'center' },
   registerText: { color: '#0077b6', fontSize: 16 },

@@ -4,15 +4,19 @@ import {
   Text,
   StyleSheet,
   Alert,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
+const cardWidth = (width - 60) / 2; // Two cards per row with margin
 
 const SupplierHome = () => {
   const navigation = useNavigation();
@@ -54,7 +58,7 @@ const SupplierHome = () => {
   const navigateTo = (screen) => navigation.navigate(screen);
 
   const renderMenuCard = (title, icon, gradientColors, onPress) => (
-    <TouchableOpacity style={styles.cardContainer} onPress={onPress}>
+    <TouchableOpacity style={[styles.cardContainer, { width: cardWidth }]} onPress={onPress}>
       <LinearGradient
         colors={gradientColors}
         style={styles.cardGradient}
@@ -111,52 +115,66 @@ const SupplierHome = () => {
         />
       </View>
 
-      {/* Menu */}
-      <ScrollView contentContainerStyle={styles.menuContainer} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>Actions</Text>
-
+      {/* Action Cards */}
+      <View style={styles.cardsWrapper}>
         {renderMenuCard(
           'View Supply Requests',
-          <Ionicons name="clipboard-outline" size={30} color="#fff" />,
+          <Ionicons name="clipboard-outline" size={28} color="#fff" />,
           ['#023e8a', '#0077b6'],
           () => navigateTo('SupplyRequests')
         )}
 
         {renderMenuCard(
-          'Chat with Admin/Staff',
-          <Ionicons name="chatbubble-ellipses-outline" size={30} color="#fff" />,
-          ['#0077b6', '#00b4d8'],
-          () => navigateTo('SupplierChat')
-        )}
-
-        <Text style={styles.sectionTitle}>Support</Text>
-
-        {renderMenuCard(
           'Help',
-          <MaterialIcons name="help-outline" size={30} color="#fff" />,
+          <MaterialIcons name="help-outline" size={28} color="#fff" />,
           ['#0096c7', '#00b4d8'],
           () => navigateTo('Help')
         )}
 
         {renderMenuCard(
           'About Us',
-          <FontAwesome5 name="info-circle" size={30} color="#fff" />,
+          <FontAwesome5 name="info-circle" size={28} color="#fff" />,
           ['#00b4d8', '#48cae4'],
           () => navigateTo('AboutUs')
         )}
 
         {renderMenuCard(
           'Contact Us',
-          <Ionicons name="call-outline" size={30} color="#fff" />,
+          <Ionicons name="call-outline" size={28} color="#fff" />,
           ['#0077b6', '#00b4d8'],
           () => navigateTo('ContactUs')
         )}
+      </View>
 
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+      {/* Logout */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Ionicons name="log-out-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
+
+      {/* Description & Contacts */}
+      <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
+        <View style={styles.infoContainer}>
+          <Text style={styles.sectionTitle}>About Mombasa</Text>
+          <Text style={styles.infoText}>
+            Mombasa is a vibrant coastal city in Kenya, known for its rich history, beautiful beaches, 
+            and bustling port. It is a key hub for trade, tourism, and ferry services connecting the mainland to nearby islands.
+          </Text>
+
+          <Text style={styles.sectionTitle}>Contact Information</Text>
+          <View style={styles.contactRow}>
+            <Ionicons name="call-outline" size={20} color="#0077b6" style={styles.contactIcon} />
+            <Text style={styles.infoText}>+254 700 000 000</Text>
+          </View>
+          <View style={styles.contactRow}>
+            <MaterialIcons name="email" size={20} color="#0077b6" style={styles.contactIcon} />
+            <Text style={styles.infoText}>info@mombasaferry.co.ke</Text>
+          </View>
+          <View style={styles.contactRow}>
+            <FontAwesome5 name="map-marker-alt" size={20} color="#0077b6" style={styles.contactIcon} />
+            <Text style={styles.infoText}>Mombasa Ferry Terminal, Mombasa, Kenya</Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -217,7 +235,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderColor: '#ccc',
     borderWidth: 1,
-    marginBottom: 25,
+    marginBottom: 20,
     elevation: 2,
   },
   searchInput: {
@@ -225,17 +243,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#023e8a',
   },
-  menuContainer: {
-    paddingBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0077b6',
-    marginVertical: 10,
+  cardsWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
   cardContainer: {
-    marginVertical: 8,
+    marginBottom: 15,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 3,
@@ -248,14 +263,14 @@ const styles = StyleSheet.create({
   },
   cardText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    marginLeft: 12,
+    marginLeft: 10,
   },
   logoutButton: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 25,
+    marginBottom: 20,
     backgroundColor: '#ff6b6b',
     paddingVertical: 14,
     borderRadius: 12,
@@ -266,6 +281,31 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  infoContainer: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  contactIcon: {
+    marginRight: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0077b6',
+    marginVertical: 10,
   },
 });
 

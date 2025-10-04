@@ -44,7 +44,6 @@ const UploadInventoryScreen = () => {
     return true;
   };
 
-  // Handle manual JSON upload
   const handleManualUpload = async () => {
     if (!validateInputs()) return;
 
@@ -64,7 +63,7 @@ const UploadInventoryScreen = () => {
       const response = await axios.post(
         'https://mombasa-backend.onrender.com/inventory/items',
         payload,
-        { headers: { Authorization: `Bearer ${token}` } } // ✅ Include token
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       Alert.alert('Success', response.data.message || 'Item uploaded successfully');
@@ -81,7 +80,6 @@ const UploadInventoryScreen = () => {
     }
   };
 
-  // Pick a file
   const pickFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -98,7 +96,6 @@ const UploadInventoryScreen = () => {
     }
   };
 
-  // Upload file
   const handleFileUpload = async () => {
     if (!file) {
       Alert.alert('No File', 'Please select a file first.');
@@ -148,47 +145,52 @@ const UploadInventoryScreen = () => {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Upload Inventory Item</Text>
 
-        {/* Manual JSON form */}
+        {/* Manual JSON form with labels */}
+        <Text style={styles.label}>Item Name *</Text>
         <TextInput
-          placeholder="Item Name *"
           style={styles.input}
           value={itemName}
           onChangeText={setItemName}
           editable={!loading}
           autoCapitalize="words"
         />
+
+        <Text style={styles.label}>Category</Text>
         <TextInput
-          placeholder="Category"
           style={styles.input}
           value={category}
           onChangeText={setCategory}
           editable={!loading}
           autoCapitalize="words"
         />
+
+        <Text style={styles.label}>Unit (e.g., kg, pcs) *</Text>
         <TextInput
-          placeholder="Unit (e.g., kg, pcs) *"
           style={styles.input}
           value={unit}
           onChangeText={setUnit}
           editable={!loading}
           autoCapitalize="none"
         />
+
+        <Text style={styles.label}>Current Stock *</Text>
         <TextInput
-          placeholder="Current Stock *"
           style={styles.input}
           keyboardType="numeric"
           value={currentStock}
           onChangeText={setCurrentStock}
           editable={!loading}
         />
+
+        <Text style={styles.label}>Reorder Level (default 0)</Text>
         <TextInput
-          placeholder="Reorder Level (default 0)"
           style={styles.input}
           keyboardType="numeric"
           value={reorderLevel}
           onChangeText={setReorderLevel}
           editable={!loading}
         />
+
         <Button title="Upload Item" onPress={handleManualUpload} color="#007bff" />
 
         <View style={{ marginVertical: 20, borderBottomWidth: 1, borderBottomColor: '#ccc' }} />
@@ -217,6 +219,12 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#222',
     textAlign: 'center',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,

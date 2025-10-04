@@ -26,31 +26,26 @@ const RegisterScreen = () => {
   const isStrongPassword = (pw) => pw.length >= 6;
 
   const handleRegister = async () => {
-    // Check for missing fields
     if (!fullName || !email || !password || !confirmPassword || !phone) {
       Alert.alert('Missing Fields', 'Please fill in all required fields.');
       return;
     }
 
-    // Validate email
     if (!isValidEmail(email)) {
       Alert.alert('Invalid Email', 'Please enter a valid email address.');
       return;
     }
 
-    // Validate password strength
     if (!isStrongPassword(password)) {
       Alert.alert('Weak Password', 'Password must be at least 6 characters long.');
       return;
     }
 
-    // Check password match
     if (password !== confirmPassword) {
       Alert.alert('Mismatch', 'Passwords do not match.');
       return;
     }
 
-    // Validate phone number length
     if (phone.length < 10 || phone.length > 20) {
       Alert.alert('Invalid Phone Number', 'Phone number must be between 10 and 20 digits.');
       return;
@@ -72,14 +67,12 @@ const RegisterScreen = () => {
           'Your account was created successfully! Please wait for admin approval.'
         );
 
-        // Clear form
         setFullName('');
         setEmail('');
         setPhone('');
         setPassword('');
         setConfirmPassword('');
 
-        // Navigate to Login after 1 second
         setTimeout(() => {
           navigation.replace('Login');
         }, 1000);
@@ -100,42 +93,42 @@ const RegisterScreen = () => {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Register as Passenger</Text>
 
+      <Text style={styles.label}>Full Name *</Text>
       <TextInput
         style={styles.input}
-        placeholder="Full Name *"
         value={fullName}
         onChangeText={setFullName}
       />
 
+      <Text style={styles.label}>Email Address *</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email Address *"
         keyboardType="email-address"
         autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
       />
 
+      <Text style={styles.label}>Phone *</Text>
       <TextInput
         style={styles.input}
-        placeholder="Phone *"
         keyboardType="number-pad"
         value={phone}
-        maxLength={20} // max 20 digits
-        onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, ''))} // numeric-only
+        maxLength={20}
+        onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, ''))}
       />
 
+      <Text style={styles.label}>Password *</Text>
       <TextInput
         style={styles.input}
-        placeholder="Password *"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
 
+      <Text style={styles.label}>Confirm Password *</Text>
       <TextInput
         style={styles.input}
-        placeholder="Confirm Password *"
         secureTextEntry
         value={confirmPassword}
         onChangeText={setConfirmPassword}
@@ -174,6 +167,12 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#006699',
   },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 5,
+    color: '#333',
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -181,6 +180,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 15,
     fontSize: 16,
+    color: '#000',
   },
   button: {
     backgroundColor: '#006699',

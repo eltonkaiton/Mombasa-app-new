@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,17 +24,18 @@ const BookingScreen = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   const [route, setRoute] = useState('');
+  const [filteredRoutes, setFilteredRoutes] = useState([]);
   const [numPassengers, setNumPassengers] = useState('');
   const [vehicleType, setVehicleType] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [cargoDescription, setCargoDescription] = useState('');
   const [cargoWeight, setCargoWeight] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('mpesa');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [filteredPayments, setFilteredPayments] = useState([]);
   const [transactionId, setTransactionId] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ FIX: remove /api prefix
   const API_BASE_URL = 'https://mombasa-backend.onrender.com';
 
   const ferryRoutes = [
@@ -46,6 +46,8 @@ const BookingScreen = () => {
     'Likoni - Mtongwe',
     'Mtongwe - Likoni',
   ];
+
+  const paymentMethods = ['mpesa', 'cash', 'card', 'bank transfer'];
 
   useEffect(() => {
     if (bookingType === 'vehicle') {
@@ -78,6 +80,8 @@ const BookingScreen = () => {
         travel_time: formatTime(travelDate),
         route,
         amount_paid: Number(amountPaid),
+        // Automatically set payment status as "paid" for passenger bookings
+        payment_status: bookingType === 'passenger' ? 'paid' : 'pending',
       };
 
       if (bookingType === 'passenger') {
@@ -87,11 +91,13 @@ const BookingScreen = () => {
         bookingData.vehicle_plate = vehiclePlate;
         bookingData.payment_method = paymentMethod;
         bookingData.transaction_id = transactionId;
+        bookingData.payment_status = 'pending'; // Vehicle bookings require payment verification
       } else if (bookingType === 'cargo') {
         bookingData.cargo_description = cargoDescription;
         bookingData.cargo_weight_kg = cargoWeight;
         bookingData.payment_method = paymentMethod;
         bookingData.transaction_id = transactionId;
+        bookingData.payment_status = 'pending'; // Cargo bookings require payment verification
       }
 
       await axios.post(`${API_BASE_URL}/bookings/create`, bookingData, {
@@ -107,7 +113,7 @@ const BookingScreen = () => {
       resetForm();
     } catch (error) {
       console.error('Booking submission failed:', error?.response?.data || error);
-      Alert.alert('Error', 'Booking submission failed');
+      Alert.alert('Error', error?.response?.data?.message || 'Booking submission failed');
     } finally {
       setLoading(false);
     }
@@ -115,12 +121,14 @@ const BookingScreen = () => {
 
   const resetForm = () => {
     setRoute('');
+    setFilteredRoutes([]);
     setNumPassengers('');
     setVehicleType('');
     setVehiclePlate('');
     setCargoDescription('');
     setCargoWeight('');
-    setPaymentMethod('mpesa');
+    setPaymentMethod('');
+    setFilteredPayments([]);
     setTransactionId('');
     setAmountPaid('');
     setTravelDate(new Date());
@@ -129,8 +137,42 @@ const BookingScreen = () => {
   const formatDate = (date) => date.toISOString().split('T')[0];
   const formatTime = (date) => date.toTimeString().split(':').slice(0, 2).join(':');
 
+  const handleRouteChange = (text) => {
+    setRoute(text);
+    if (text.length > 0) {
+      const filtered = ferryRoutes.filter((r) =>
+        r.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredRoutes(filtered);
+    } else {
+      setFilteredRoutes([]);
+    }
+  };
+
+  const handleSelectRoute = (selected) => {
+    setRoute(selected);
+    setFilteredRoutes([]);
+  };
+
+  const handlePaymentChange = (text) => {
+    setPaymentMethod(text);
+    if (text.length > 0) {
+      const filtered = paymentMethods.filter((p) =>
+        p.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredPayments(filtered);
+    } else {
+      setFilteredPayments([]);
+    }
+  };
+
+  const handleSelectPayment = (selected) => {
+    setPaymentMethod(selected);
+    setFilteredPayments([]);
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.heading}>New Booking</Text>
 
       <Text style={styles.label}>Booking Type</Text>
@@ -141,7 +183,9 @@ const BookingScreen = () => {
             style={[styles.typeBtn, bookingType === type && styles.selectedBtn]}
             onPress={() => setBookingType(type)}
           >
-            <Text style={[styles.typeText, bookingType === type && { color: '#fff' }]}>{type}</Text>
+            <Text style={[styles.typeText, bookingType === type && { color: '#fff' }]}>
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -179,14 +223,25 @@ const BookingScreen = () => {
       )}
 
       <Text style={styles.label}>Route</Text>
-      <View style={styles.pickerWrapper}>
-        <Picker selectedValue={route} onValueChange={(itemValue) => setRoute(itemValue)}>
-          <Picker.Item label="Select Route" value="" />
-          {ferryRoutes.map((r) => (
-            <Picker.Item key={r} label={r} value={r} />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter or select a route"
+        value={route}
+        onChangeText={handleRouteChange}
+      />
+      {filteredRoutes.length > 0 && (
+        <View style={styles.suggestionsList}>
+          {filteredRoutes.map((item) => (
+            <TouchableOpacity
+              key={item}
+              onPress={() => handleSelectRoute(item)}
+              style={styles.suggestionItem}
+            >
+              <Text>{item}</Text>
+            </TouchableOpacity>
           ))}
-        </Picker>
-      </View>
+        </View>
+      )}
 
       {bookingType === 'passenger' && (
         <>
@@ -198,6 +253,9 @@ const BookingScreen = () => {
             value={numPassengers}
             onChangeText={setNumPassengers}
           />
+          <Text style={styles.paymentNote}>
+            * Passenger bookings are automatically marked as paid
+          </Text>
         </>
       )}
 
@@ -206,7 +264,7 @@ const BookingScreen = () => {
           <Text style={styles.label}>Vehicle Type</Text>
           <TextInput
             style={styles.input}
-            placeholder="Vehicle Type"
+            placeholder="e.g., Car, Truck, Bus, Motorcycle"
             value={vehicleType}
             onChangeText={setVehicleType}
           />
@@ -225,7 +283,7 @@ const BookingScreen = () => {
           <Text style={styles.label}>Cargo Description</Text>
           <TextInput
             style={styles.input}
-            placeholder="Cargo Description"
+            placeholder="Describe your cargo"
             value={cargoDescription}
             onChangeText={setCargoDescription}
           />
@@ -243,13 +301,40 @@ const BookingScreen = () => {
       {(bookingType === 'vehicle' || bookingType === 'cargo') && (
         <>
           <Text style={styles.label}>Payment Method</Text>
-          <TextInput style={styles.input} value={paymentMethod} onChangeText={setPaymentMethod} />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter or select payment method"
+            value={paymentMethod}
+            onChangeText={handlePaymentChange}
+          />
+          {filteredPayments.length > 0 && (
+            <View style={styles.suggestionsList}>
+              {filteredPayments.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() => handleSelectPayment(item)}
+                  style={styles.suggestionItem}
+                >
+                  <Text>{item.charAt(0).toUpperCase() + item.slice(1)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
           <Text style={styles.label}>Transaction ID</Text>
-          <TextInput style={styles.input} value={transactionId} onChangeText={setTransactionId} />
+          <TextInput 
+            style={styles.input} 
+            placeholder="Enter transaction ID" 
+            value={transactionId} 
+            onChangeText={setTransactionId} 
+          />
 
           <Text style={styles.label}>Amount (Auto Calculated)</Text>
           <Text style={styles.amount}>{amountPaid} KES</Text>
+          
+          <Text style={styles.paymentNote}>
+            * Payment verification required for {bookingType} bookings
+          </Text>
         </>
       )}
 
@@ -272,10 +357,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
   },
   label: {
     marginTop: 15,
     fontWeight: '600',
+    color: '#333',
   },
   input: {
     borderWidth: 1,
@@ -283,28 +371,48 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginTop: 5,
+    backgroundColor: '#f9f9f9',
   },
-  pickerWrapper: {
+  suggestionsList: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
-    marginTop: 5,
+    maxHeight: 120,
+    marginTop: 2,
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+  },
+  suggestionItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   row: {
     flexDirection: 'row',
     gap: 10,
     marginVertical: 10,
+    justifyContent: 'space-between',
   },
   typeBtn: {
-    padding: 10,
-    backgroundColor: '#eee',
+    flex: 1,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#dee2e6',
   },
   selectedBtn: {
     backgroundColor: '#007bff',
+    borderColor: '#007bff',
   },
   typeText: {
     fontWeight: '600',
+    color: '#333',
   },
   submitBtn: {
     backgroundColor: '#28a745',
@@ -312,15 +420,31 @@ const styles = StyleSheet.create({
     marginTop: 30,
     borderRadius: 10,
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   submitText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   amount: {
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 5,
     color: '#007bff',
+    padding: 10,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 6,
+    textAlign: 'center',
+  },
+  paymentNote: {
+    fontSize: 12,
+    color: '#6c757d',
+    fontStyle: 'italic',
+    marginTop: 5,
   },
 });
