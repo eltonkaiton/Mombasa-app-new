@@ -12,7 +12,7 @@ const ViewInventoryScreen = () => {
 
   const fetchInventory = async () => {
     try {
-      const res = await axios.get('http://192.168.100.8:3000/inventory/all'); // Update this to your IP if testing on device
+      const res = await axios.get('http://192.168.100.8:5000/inventory/all'); // Update this to your IP if testing on device
       setInventory(res.data);
     } catch (error) {
       console.error('Error fetching inventory:', error);

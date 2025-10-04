@@ -16,7 +16,7 @@ import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // API Endpoint
-const FERRIES_URL = 'http://192.168.100.8:5000/ferries';
+const FERRIES_URL = 'http://172.17.12.150:5000/ferries';
 
 const FerriesScreen = () => {
   const [ferries, setFerries] = useState([]);

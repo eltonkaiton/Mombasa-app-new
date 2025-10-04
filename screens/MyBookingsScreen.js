@@ -66,6 +66,8 @@ const MyBookingsScreen = () => {
   // Ticket generator
   const generateTicket = async (booking) => {
     try {
+      const amountDisplay = booking.amount_paid === 0 ? "N/A" : `KES ${booking.amount_paid}`;
+
       const html = `
         <html>
           <head>
@@ -85,7 +87,7 @@ const MyBookingsScreen = () => {
                   <tr><th>Route</th><td>${booking.route || "N/A"}</td></tr>
                   <tr><th>Status</th><td>${booking.booking_status}</td></tr>
                   <tr><th>Payment Status</th><td>${booking.payment_status}</td></tr>
-                  <tr><th>Amount Paid</th><td>KES ${booking.amount_paid}</td></tr>
+                  <tr><th>Amount Paid</th><td>${amountDisplay}</td></tr>
                 </tbody>
               </table>
               <p class="text-center mt-4">Please present this ticket before boarding.</p>
@@ -133,6 +135,7 @@ const MyBookingsScreen = () => {
 
   const renderBooking = ({ item }) => {
     const currentRating = ratings[item._id] || item.ferry_rating || 0;
+    const amountDisplay = item.amount_paid === 0 ? "N/A" : `KES ${item.amount_paid}`;
 
     return (
       <View style={styles.bookingCard}>
@@ -146,7 +149,7 @@ const MyBookingsScreen = () => {
         <Text style={styles.bookingText}>Route: {item.route || "N/A"}</Text>
         <Text style={styles.bookingText}>Status: {item.booking_status}</Text>
         <Text style={styles.bookingText}>Payment: {item.payment_status}</Text>
-        <Text style={styles.bookingText}>Amount Paid: KES {item.amount_paid}</Text>
+        <Text style={styles.bookingText}>Amount Paid: {amountDisplay}</Text>
         <Text style={styles.bookingText}>
           Passenger: {item.user_id?.full_name || "N/A"}
         </Text>

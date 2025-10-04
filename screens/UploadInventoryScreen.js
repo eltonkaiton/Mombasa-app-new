@@ -62,7 +62,7 @@ const UploadInventoryScreen = () => {
       };
 
       const response = await axios.post(
-        'http://192.168.100.8:3000/inventory/items',
+        'http://192.168.100.8:5000/inventory/items',
         payload,
         { headers: { Authorization: `Bearer ${token}` } } // ✅ Include token
       );
@@ -120,7 +120,7 @@ const UploadInventoryScreen = () => {
       });
 
       const response = await axios.post(
-        'http://192.168.100.8:3000/inventory/upload',
+        'http://192.168.100.8:5000/inventory/upload',
         formData,
         {
           headers: {

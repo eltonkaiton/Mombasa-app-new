@@ -3,7 +3,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ✅ Backend base URL
-const API_BASE_URL = "http://192.168.100.8:5000/api/ferrycrew";
+const API_BASE_URL = "http://172.17.12.150:5000/api/ferrycrew";
 
 // Helper → get token from AsyncStorage
 const getAuthHeaders = async () => {
