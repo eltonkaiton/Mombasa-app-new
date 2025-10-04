@@ -1,0 +1,28 @@
+# Ignore editor configs
+.vscode
+.idea
+
+# Ignore OS/system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Ignore node modules (will be reinstalled on server)
+node_modules
+
+# Ignore package lock if not needed
+package-lock.json
+yarn.lock
+
+# Ignore git stuff
+.git
+.gitignore
+
+# Ignore Expo caches
+.expo
+.expo-shared
+
+# Ignore test and build artifacts
+dist
+build
+*.log

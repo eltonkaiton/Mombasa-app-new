@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.kaiton254.mombasaferry"
     },
     "web": {
       "output": "static",
@@ -36,6 +37,12 @@
       ],
       "expo-router",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d22ee82d-00dd-4316-ab8e-24ff053bf4e5"
+      }
+    }
   }
 }
