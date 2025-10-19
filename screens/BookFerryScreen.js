@@ -32,6 +32,7 @@ const BookingScreen = () => {
   const [cargoWeight, setCargoWeight] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [filteredPayments, setFilteredPayments] = useState([]);
+  const [showPaymentSuggestions, setShowPaymentSuggestions] = useState(false);
   const [transactionId, setTransactionId] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,7 +48,7 @@ const BookingScreen = () => {
     'Mtongwe - Likoni',
   ];
 
-  const paymentMethods = ['mpesa', 'cash', 'card', 'bank transfer'];
+  const paymentMethods = ['mpesa', 'cash', 'card', 'bank'];
 
   useEffect(() => {
     if (bookingType === 'vehicle') {
@@ -64,9 +65,55 @@ const BookingScreen = () => {
     }
   }, [bookingType, cargoWeight]);
 
+  // Function to check if selected date/time is in the past
+  const isPastDateTime = (selectedDate) => {
+    const now = new Date();
+    return selectedDate < now;
+  };
+
+  // Function to get minimum date for date picker (today)
+  const getMinDate = () => {
+    return new Date();
+  };
+
+  // Function to validate booking date and time
+  const validateBookingDateTime = () => {
+    if (isPastDateTime(travelDate)) {
+      Alert.alert('Invalid Date/Time', 'You cannot book for a past date or time. Please select a future date and time.');
+      return false;
+    }
+    return true;
+  };
+
+  const validateTransactionId = (id) => {
+    // Check if transaction ID contains both letters and numbers
+    const hasLetters = /[a-zA-Z]/.test(id);
+    const hasNumbers = /[0-9]/.test(id);
+    return hasLetters && hasNumbers;
+  };
+
   const handleSubmit = async () => {
+    // Validate date and time first
+    if (!validateBookingDateTime()) {
+      return;
+    }
+
     if (!route) {
       Alert.alert('Error', 'Please select a route.');
+      return;
+    }
+
+    // Validate transaction ID for vehicle and cargo bookings
+    if ((bookingType === 'vehicle' || bookingType === 'cargo') && transactionId) {
+      if (!validateTransactionId(transactionId)) {
+        Alert.alert('Error', 'Transaction ID must contain both letters and numbers.');
+        return;
+      }
+    }
+
+    // Validate payment method for vehicle and cargo bookings
+    if ((bookingType === 'vehicle' || bookingType === 'cargo') && !paymentMethod) {
+      Alert.alert('Error', 'Please select a payment method.');
       return;
     }
 
@@ -80,24 +127,25 @@ const BookingScreen = () => {
         travel_time: formatTime(travelDate),
         route,
         amount_paid: Number(amountPaid),
-        // Automatically set payment status as "paid" for passenger bookings
+        // Set payment status based on booking type
         payment_status: bookingType === 'passenger' ? 'paid' : 'pending',
       };
 
       if (bookingType === 'passenger') {
-        bookingData.num_passengers = numPassengers;
+        bookingData.num_passengers = parseInt(numPassengers) || 1;
+        // For passenger bookings, use default payment method and auto-generated transaction ID
+        bookingData.payment_method = 'cash';
+        bookingData.transaction_id = `PASS-${Date.now()}`;
       } else if (bookingType === 'vehicle') {
         bookingData.vehicle_type = vehicleType;
         bookingData.vehicle_plate = vehiclePlate;
         bookingData.payment_method = paymentMethod;
         bookingData.transaction_id = transactionId;
-        bookingData.payment_status = 'pending'; // Vehicle bookings require payment verification
       } else if (bookingType === 'cargo') {
         bookingData.cargo_description = cargoDescription;
-        bookingData.cargo_weight_kg = cargoWeight;
+        bookingData.cargo_weight_kg = parseFloat(cargoWeight);
         bookingData.payment_method = paymentMethod;
         bookingData.transaction_id = transactionId;
-        bookingData.payment_status = 'pending'; // Cargo bookings require payment verification
       }
 
       await axios.post(`${API_BASE_URL}/bookings/create`, bookingData, {
@@ -129,6 +177,7 @@ const BookingScreen = () => {
     setCargoWeight('');
     setPaymentMethod('');
     setFilteredPayments([]);
+    setShowPaymentSuggestions(false);
     setTransactionId('');
     setAmountPaid('');
     setTravelDate(new Date());
@@ -136,6 +185,56 @@ const BookingScreen = () => {
 
   const formatDate = (date) => date.toISOString().split('T')[0];
   const formatTime = (date) => date.toTimeString().split(':').slice(0, 2).join(':');
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      // If selected date is today, ensure time is not in the past
+      const now = new Date();
+      const today = new Date(now.toDateString());
+      const selectedDay = new Date(selectedDate.toDateString());
+      
+      if (selectedDay.getTime() === today.getTime()) {
+        // If selecting today's date, ensure time is in future
+        if (selectedDate < now) {
+          Alert.alert('Invalid Time', 'You cannot book for a past time. Please select a future time.');
+          // Set to current time + 1 hour as default
+          const futureTime = new Date(now.getTime() + 60 * 60 * 1000);
+          setTravelDate(futureTime);
+          return;
+        }
+      }
+      setTravelDate(selectedDate);
+    }
+  };
+
+  const handleTimeChange = (event, selectedTime) => {
+    setShowTimePicker(false);
+    if (selectedTime) {
+      const now = new Date();
+      const selectedDateTime = new Date(
+        travelDate.getFullYear(),
+        travelDate.getMonth(),
+        travelDate.getDate(),
+        selectedTime.getHours(),
+        selectedTime.getMinutes()
+      );
+
+      if (selectedDateTime < now) {
+        Alert.alert('Invalid Time', 'You cannot book for a past time. Please select a future time.');
+        // Set to current time + 1 hour as default
+        const futureTime = new Date(now.getTime() + 60 * 60 * 1000);
+        setTravelDate(futureTime);
+        return;
+      }
+
+      // Update only the time portion while keeping the date
+      const updatedDate = new Date(travelDate);
+      updatedDate.setHours(selectedTime.getHours());
+      updatedDate.setMinutes(selectedTime.getMinutes());
+      setTravelDate(updatedDate);
+    }
+  };
 
   const handleRouteChange = (text) => {
     setRoute(text);
@@ -161,14 +260,47 @@ const BookingScreen = () => {
         p.toLowerCase().includes(text.toLowerCase())
       );
       setFilteredPayments(filtered);
+      setShowPaymentSuggestions(true);
     } else {
       setFilteredPayments([]);
+      setShowPaymentSuggestions(false);
     }
   };
 
   const handleSelectPayment = (selected) => {
     setPaymentMethod(selected);
     setFilteredPayments([]);
+    setShowPaymentSuggestions(false);
+  };
+
+  const handlePaymentInputFocus = () => {
+    setFilteredPayments(paymentMethods);
+    setShowPaymentSuggestions(true);
+  };
+
+  const handlePaymentInputBlur = () => {
+    // Delay hiding suggestions to allow for selection
+    setTimeout(() => {
+      setShowPaymentSuggestions(false);
+    }, 200);
+  };
+
+  // Get date display with warning if past
+  const getDateDisplay = () => {
+    const dateStr = formatDate(travelDate);
+    if (isPastDateTime(travelDate)) {
+      return `${dateStr} ⚠️ Past`;
+    }
+    return dateStr;
+  };
+
+  // Get time display with warning if past
+  const getTimeDisplay = () => {
+    const timeStr = formatTime(travelDate);
+    if (isPastDateTime(travelDate)) {
+      return `${timeStr} ⚠️ Past`;
+    }
+    return timeStr;
   };
 
   return (
@@ -191,35 +323,46 @@ const BookingScreen = () => {
       </View>
 
       <Text style={styles.label}>Travel Date</Text>
-      <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
-        <Text>{formatDate(travelDate)}</Text>
+      <TouchableOpacity 
+        style={[styles.input, isPastDateTime(travelDate) && styles.pastInput]} 
+        onPress={() => setShowDatePicker(true)}
+      >
+        <Text style={isPastDateTime(travelDate) && styles.pastText}>
+          {getDateDisplay()}
+        </Text>
       </TouchableOpacity>
       {showDatePicker && (
         <DateTimePicker
           value={travelDate}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, selectedDate) => {
-            setShowDatePicker(false);
-            if (selectedDate) setTravelDate(new Date(selectedDate));
-          }}
+          onChange={handleDateChange}
+          minimumDate={getMinDate()}
         />
       )}
 
       <Text style={styles.label}>Travel Time</Text>
-      <TouchableOpacity style={styles.input} onPress={() => setShowTimePicker(true)}>
-        <Text>{formatTime(travelDate)}</Text>
+      <TouchableOpacity 
+        style={[styles.input, isPastDateTime(travelDate) && styles.pastInput]} 
+        onPress={() => setShowTimePicker(true)}
+      >
+        <Text style={isPastDateTime(travelDate) && styles.pastText}>
+          {getTimeDisplay()}
+        </Text>
       </TouchableOpacity>
       {showTimePicker && (
         <DateTimePicker
           value={travelDate}
           mode="time"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, selectedTime) => {
-            setShowTimePicker(false);
-            if (selectedTime) setTravelDate(new Date(selectedTime));
-          }}
+          onChange={handleTimeChange}
         />
+      )}
+
+      {isPastDateTime(travelDate) && (
+        <Text style={styles.warningText}>
+          ⚠️ You have selected a past date/time. Please select a future date and time to proceed.
+        </Text>
       )}
 
       <Text style={styles.label}>Route</Text>
@@ -300,14 +443,16 @@ const BookingScreen = () => {
 
       {(bookingType === 'vehicle' || bookingType === 'cargo') && (
         <>
-          <Text style={styles.label}>Payment Method</Text>
+          <Text style={styles.label}>Payment Method *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter or select payment method"
+            placeholder="Select payment method"
             value={paymentMethod}
             onChangeText={handlePaymentChange}
+            onFocus={handlePaymentInputFocus}
+            onBlur={handlePaymentInputBlur}
           />
-          {filteredPayments.length > 0 && (
+          {showPaymentSuggestions && filteredPayments.length > 0 && (
             <View style={styles.suggestionsList}>
               {filteredPayments.map((item) => (
                 <TouchableOpacity
@@ -315,19 +460,26 @@ const BookingScreen = () => {
                   onPress={() => handleSelectPayment(item)}
                   style={styles.suggestionItem}
                 >
-                  <Text>{item.charAt(0).toUpperCase() + item.slice(1)}</Text>
+                  <Text style={styles.paymentSuggestionText}>
+                    {item.charAt(0).toUpperCase() + item.slice(1)}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
 
-          <Text style={styles.label}>Transaction ID</Text>
+          <Text style={styles.label}>Transaction ID *</Text>
           <TextInput 
             style={styles.input} 
-            placeholder="Enter transaction ID" 
+            placeholder="Enter transaction ID (must contain letters & numbers)" 
             value={transactionId} 
             onChangeText={setTransactionId} 
           />
+          {transactionId && !validateTransactionId(transactionId) && (
+            <Text style={styles.errorText}>
+              Transaction ID must contain both letters and numbers
+            </Text>
+          )}
 
           <Text style={styles.label}>Amount (Auto Calculated)</Text>
           <Text style={styles.amount}>{amountPaid} KES</Text>
@@ -338,8 +490,21 @@ const BookingScreen = () => {
         </>
       )}
 
-      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Submit Booking</Text>}
+      <TouchableOpacity 
+        style={[
+          styles.submitBtn, 
+          isPastDateTime(travelDate) && styles.disabledBtn
+        ]} 
+        onPress={handleSubmit} 
+        disabled={loading || isPastDateTime(travelDate)}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.submitText}>
+            {isPastDateTime(travelDate) ? 'Select Future Date/Time' : 'Submit Booking'}
+          </Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -373,6 +538,13 @@ const styles = StyleSheet.create({
     marginTop: 5,
     backgroundColor: '#f9f9f9',
   },
+  pastInput: {
+    borderColor: '#dc3545',
+    backgroundColor: '#fff5f5',
+  },
+  pastText: {
+    color: '#dc3545',
+  },
   suggestionsList: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -390,6 +562,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  paymentSuggestionText: {
+    textTransform: 'capitalize',
   },
   row: {
     flexDirection: 'row',
@@ -426,6 +601,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
+  disabledBtn: {
+    backgroundColor: '#6c757d',
+  },
   submitText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -445,6 +623,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6c757d',
     fontStyle: 'italic',
+    marginTop: 5,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#dc3545',
+    marginTop: 5,
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#dc3545',
+    backgroundColor: '#fff5f5',
+    padding: 10,
+    borderRadius: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: '#dc3545',
     marginTop: 5,
   },
 });

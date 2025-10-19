@@ -93,22 +93,41 @@ const LoginScreen = () => {
         Alert.alert('Success', 'Logged in successfully');
 
         let destination;
-        switch (userRole) {
-          case 'admin': destination = 'AdminHome'; break;
-          case 'staff': destination = 'StaffHome'; break;
-          case 'finance': destination = 'FinanceHome'; break;
-          case 'inventory': destination = 'InventoryHome'; break;
-          case 'passenger': destination = 'PassengerHome'; break;
-          case 'supplier': destination = 'SupplierHome'; break;
-          default:
-            Alert.alert('Login Error', `Unknown role: ${userRole}`);
-            return;
+        let destinationParams = { full_name: full_name || name };
+
+        // 🔹 Decide screen based on role and category - MATCHING App.js SCREEN NAMES
+        if (userRole === 'staff') {
+          if (category && category.toLowerCase() === 'service') {
+            destination = 'ServiceManager'; // ✅ Fixed: matches App.js screen name
+          } else {
+            destination = 'StaffHome';
+          }
+        } else {
+          switch (userRole) {
+            case 'admin': 
+              destination = 'AdminHome'; 
+              break;
+            case 'finance': 
+              destination = 'FinanceHome'; 
+              break;
+            case 'inventory': 
+              destination = 'InventoryHome'; 
+              break;
+            case 'passenger': 
+              destination = 'PassengerHome'; 
+              break;
+            case 'supplier': 
+              destination = 'SupplierHome'; 
+              break;
+            default:
+              Alert.alert('Login Error', `Unknown role: ${userRole}`);
+              return;
+          }
         }
 
-        navigation.reset({
-          index: 0,
-          routes: [{ name: destination, params: { full_name: full_name || name } }],
-        });
+        // ✅ Use navigate instead of reset for better compatibility
+        navigation.navigate(destination, destinationParams);
+        
       } else {
         Alert.alert('Login Failed', data.message || 'Invalid credentials');
       }
@@ -120,17 +139,30 @@ const LoginScreen = () => {
     }
   };
 
+  const getLoginTypeDisplay = () => {
+    switch (loginType) {
+      case 'user': return 'Passenger Login';
+      case 'supplier': return 'Supplier Login';
+      case 'inventory': return 'Inventory Staff Login';
+      case 'finance': return 'Finance Staff Login';
+      case 'staff': return 'Operating Staff Login';
+      default: return 'Login';
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Login</Text>
+      <Text style={styles.heading}>Ferry Management System</Text>
+      <Text style={styles.subheading}>{getLoginTypeDisplay()}</Text>
 
+      {/* Login Type Toggle */}
       <TouchableOpacity onPress={handleToggleLoginType} style={styles.toggleLoginType}>
         <Text style={styles.toggleText}>
-          {loginType === 'user' && 'Switch to Supplier Login'}
-          {loginType === 'supplier' && 'Switch to Inventory Login'}
-          {loginType === 'inventory' && 'Switch to Finance Login'}
-          {loginType === 'finance' && 'Switch to Staff Login'}
-          {loginType === 'staff' && 'Switch to User Login'}
+          Switch to {loginType === 'user' ? 'Supplier' : 
+                    loginType === 'supplier' ? 'Inventory Staff' : 
+                    loginType === 'inventory' ? 'Finance Staff' : 
+                    loginType === 'finance' ? 'Operating Staff' : 
+                    'Passenger'} Login
         </Text>
       </TouchableOpacity>
 
@@ -161,12 +193,19 @@ const LoginScreen = () => {
         autoCapitalize="none"
       />
 
+      {/* Login Button */}
       {loading ? (
-        <ActivityIndicator size="large" color="#0077b6" style={{ marginTop: 20 }} />
+        <ActivityIndicator size="large" color="#FF6B35" style={{ marginTop: 20 }} />
       ) : (
-        <Button title="Log In" onPress={handleLogin} />
+        <TouchableOpacity 
+          style={styles.loginButton}
+          onPress={handleLogin}
+        >
+          <Text style={styles.loginButtonText}>Log In</Text>
+        </TouchableOpacity>
       )}
 
+      {/* Register Link for Passengers Only */}
       {loginType === 'user' && (
         <TouchableOpacity
           onPress={() => navigation.navigate('Register')}
@@ -175,6 +214,13 @@ const LoginScreen = () => {
           <Text style={styles.registerText}>Don't have an account? Create one</Text>
         </TouchableOpacity>
       )}
+
+      {/* Info Footer */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoText}>
+          Forge Reactor © 2025 | Forging Digital Innovation
+        </Text>
+      </View>
     </View>
   );
 };
@@ -182,38 +228,94 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#eef6fa',
+    backgroundColor: '#1A1F2E',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
   },
   heading: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#FF6B35',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  subheading: {
+    fontSize: 18,
+    fontWeight: '600',
     marginBottom: 30,
-    color: '#0077b6',
+    color: '#E2E8F0',
     textAlign: 'center',
   },
-  toggleLoginType: { alignItems: 'center', marginBottom: 20 },
-  toggleText: { color: '#0077b6', fontSize: 16, fontWeight: '500' },
+  toggleLoginType: { 
+    alignItems: 'center', 
+    marginBottom: 30,
+    padding: 12,
+    backgroundColor: '#2D3748',
+    borderRadius: 8,
+  },
+  toggleText: { 
+    color: '#FF6B35', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#0077b6',
-    marginBottom: 5,
+    color: '#E2E8F0',
+    marginBottom: 8,
+    marginLeft: 4,
   },
   input: {
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
+    backgroundColor: '#2D3748',
+    borderColor: '#4A5568',
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 20,
     fontSize: 16,
-    color: '#000',
+    color: '#FFFFFF',
   },
-  registerLink: { marginTop: 20, alignItems: 'center' },
-  registerText: { color: '#0077b6', fontSize: 16 },
+  loginButton: {
+    backgroundColor: '#FF6B35',
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  registerLink: { 
+    marginTop: 25, 
+    alignItems: 'center' 
+  },
+  registerText: { 
+    color: '#FF6B35', 
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  infoContainer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  infoText: {
+    color: '#718096',
+    fontSize: 12,
+    textAlign: 'center',
+  },
 });
 
 export default LoginScreen;

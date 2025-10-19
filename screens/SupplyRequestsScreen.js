@@ -1,4 +1,4 @@
-// 📱 SupplierSupplyScreen.js — Accept/Reject + Supply (limit <100,000) + Delivery + Always Show Receipt + Submitted Button
+// 📱 SupplierSupplyScreen.js — Accept/Reject + Supply (limit <100,000) + Delivery + Always Show Receipt + Submitted Button + 🔍 Search
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -21,10 +21,12 @@ const API_URL = 'https://mombasa-backend.onrender.com/suppliers';
 
 export default function SupplierSupplyScreen() {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState(null);
   const [amount, setAmount] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // ✅ Fetch supplier's orders
   const fetchOrders = async () => {
@@ -34,6 +36,7 @@ export default function SupplierSupplyScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOrders(res.data);
+      setFilteredOrders(res.data);
     } catch (err) {
       console.error('❌ Error fetching orders:', err.response?.data || err.message);
     } finally {
@@ -164,6 +167,22 @@ export default function SupplierSupplyScreen() {
     }
   };
 
+  // ✅ Search functionality
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    if (!text.trim()) {
+      setFilteredOrders(orders);
+      return;
+    }
+    const filtered = orders.filter(order =>
+      order.item_id?.item_name?.toLowerCase().includes(text.toLowerCase()) ||
+      order.status?.toLowerCase().includes(text.toLowerCase()) ||
+      order.finance_status?.toLowerCase().includes(text.toLowerCase()) ||
+      order.delivery_status?.toLowerCase().includes(text.toLowerCase())
+    );
+    setFilteredOrders(filtered);
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -192,7 +211,7 @@ export default function SupplierSupplyScreen() {
         <TouchableOpacity
           style={[styles.button, item.amount ? { backgroundColor: '#95a5a6' } : {}]}
           onPress={() => { setCurrentOrderId(item._id); setModalVisible(true); }}
-          disabled={!!item.amount} // disable if already submitted
+          disabled={!!item.amount}
         >
           <Text style={styles.buttonText}>{item.amount ? 'Submitted' : 'Submit Supply'}</Text>
         </TouchableOpacity>
@@ -218,11 +237,19 @@ export default function SupplierSupplyScreen() {
     <View style={styles.container}>
       <Text style={styles.header}>Supply Requests</Text>
 
+      {/* 🔍 Search Bar */}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by item, status, finance, or delivery..."
+        value={searchQuery}
+        onChangeText={handleSearch}
+      />
+
       {loading ? (
         <ActivityIndicator size="large" color="#0077b6" />
       ) : (
         <FlatList
-          data={orders}
+          data={filteredOrders}
           keyExtractor={(item) => item._id.toString()}
           renderItem={renderItem}
           ListEmptyComponent={<Text>No supply requests found.</Text>}
@@ -259,6 +286,14 @@ export default function SupplierSupplyScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#eef6fa' },
   header: { fontSize: 22, fontWeight: 'bold', marginBottom: 12, color: '#0077b6' },
+  searchInput: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
   card: { padding: 12, backgroundColor: '#fff', marginBottom: 10, borderRadius: 8, elevation: 2 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   button: { flex: 1, backgroundColor: '#0077b6', padding: 10, margin: 4, borderRadius: 5 },

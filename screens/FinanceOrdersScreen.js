@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as FileSystem from "expo-file-system/legacy";
@@ -20,23 +21,49 @@ import {
 
 const FinanceOrdersScreen = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadOrders();
   }, []);
+
+  useEffect(() => {
+    filterOrders();
+  }, [searchQuery, orders]);
 
   const loadOrders = async () => {
     try {
       setLoading(true);
       const data = await fetchOrders();
       setOrders(data);
+      setFilteredOrders(data);
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to fetch orders');
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterOrders = () => {
+    if (!searchQuery.trim()) {
+      setFilteredOrders(orders);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    const filtered = orders.filter(order =>
+      (order.supplier_name?.toLowerCase().includes(query)) ||
+      (order.item_name?.toLowerCase().includes(query)) ||
+      (order.finance_status?.toLowerCase().includes(query)) ||
+      (order.status?.toLowerCase().includes(query)) ||
+      (order.id?.toString().includes(query)) ||
+      (order._id?.toString().includes(query)) ||
+      (order.amount?.toString().includes(query))
+    );
+    setFilteredOrders(filtered);
   };
 
   // Refresh orders immediately after action
@@ -266,7 +293,7 @@ const FinanceOrdersScreen = () => {
 
   return (
     <FlatList
-      data={orders}
+      data={filteredOrders}
       keyExtractor={(item) => (item.id || item._id).toString()}
       renderItem={renderOrder}
       contentContainerStyle={styles.container}
@@ -275,6 +302,36 @@ const FinanceOrdersScreen = () => {
       ListHeaderComponent={
         <View>
           <Text style={styles.heading}>Finance Orders</Text>
+          
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search-outline" size={20} color="#666" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by supplier, item, status, amount..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              clearButtonMode="while-editing"
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+                <Ionicons name="close-circle" size={20} color="#666" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          {/* Results Count */}
+          <View style={styles.resultsContainer}>
+            <Text style={styles.resultsText}>
+              Showing {filteredOrders.length} of {orders.length} orders
+            </Text>
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchBtn}>
+                <Text style={styles.clearSearchText}>Clear Search</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
           <TouchableOpacity
             onPress={handleDownloadAllReceipts}
             style={styles.downloadAllBtn}
@@ -285,9 +342,17 @@ const FinanceOrdersScreen = () => {
         </View>
       }
       ListEmptyComponent={
-        <Text style={{ textAlign: 'center', marginTop: 50, color: '#777' }}>
-          No orders to display.
-        </Text>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="search-outline" size={50} color="#ccc" />
+          <Text style={styles.emptyText}>
+            {searchQuery ? 'No orders found matching your search.' : 'No orders to display.'}
+          </Text>
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearEmptySearchBtn}>
+              <Text style={styles.clearEmptySearchText}>Clear Search</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       }
     />
   );
@@ -306,6 +371,52 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
+  // Search Styles
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginVertical: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#333',
+  },
+  clearButton: {
+    padding: 5,
+  },
+  resultsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  resultsText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  clearSearchBtn: {
+    padding: 5,
+  },
+  clearSearchText: {
+    color: '#0077b6',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  // Card Styles
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -364,6 +475,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  // Empty State Styles
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 50,
+    padding: 20,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#777',
+    fontSize: 16,
+  },
+  clearEmptySearchBtn: {
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: '#0077b6',
+    borderRadius: 6,
+  },
+  clearEmptySearchText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 

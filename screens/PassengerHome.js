@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons'; // Added more icon sets
+import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 
 const ferryUpdatesData = [
   { id: '1', title: 'Ferry Schedule Update', description: 'New timings for the Mombasa-Dar ferry effective next week.' },
@@ -15,6 +15,7 @@ const sidebarItems = [
   { label: 'Dashboard', screen: 'PassengerHome', icon: <Ionicons name="speedometer" size={22} color="#fff" /> },
   { label: 'Book Ferry', screen: 'BookFerry', icon: <Ionicons name="boat" size={22} color="#fff" /> },
   { label: 'My Bookings', screen: 'MyBookings', icon: <Ionicons name="calendar" size={22} color="#fff" /> },
+  { label: 'Chat with Us', screen: 'Chat', icon: <Ionicons name="chatbubble-ellipses" size={22} color="#fff" /> },
   { label: 'About Us', screen: 'AboutUs', icon: <Ionicons name="information-circle" size={22} color="#fff" /> },
   { label: 'Help', screen: 'Help', icon: <Ionicons name="help-circle" size={22} color="#fff" /> },
   { label: 'Contact Us', screen: 'ContactUs', icon: <MaterialIcons name="contact-mail" size={22} color="#fff" /> },
@@ -44,13 +45,26 @@ const PassengerHomeScreen = () => {
     });
   };
 
+  const handleChatWithUs = () => {
+    setMenuOpen(false);
+    // Navigate directly to Chat screen without alert
+    navigation.navigate('Chat', { 
+      staffCategory: 'operation',
+      staffName: 'Operation Staff'
+    });
+  };
+
   // SidebarButton now accepts icon and label, and shows label only if menuOpen is true
-  const SidebarButton = ({ label, screen, icon, onPress }) => (
+  const SidebarButton = ({ label, screen, icon, onPress, isChat = false }) => (
     <TouchableOpacity
       style={[styles.sidebarButton, !menuOpen && styles.sidebarButtonClosed]}
       onPress={onPress || (() => {
         setMenuOpen(false);
-        navigation.navigate(screen);
+        if (isChat) {
+          handleChatWithUs();
+        } else {
+          navigation.navigate(screen);
+        }
       })}
       activeOpacity={0.7}
     >
@@ -73,7 +87,13 @@ const PassengerHomeScreen = () => {
         {menuOpen && <Text style={styles.logoText}>Mombasa Ferry</Text>}
 
         {sidebarItems.map(({ label, screen, icon }) => (
-          <SidebarButton key={label} label={label} screen={screen} icon={icon} />
+          <SidebarButton 
+            key={label} 
+            label={label} 
+            screen={screen} 
+            icon={icon}
+            isChat={label === 'Chat with Us'}
+          />
         ))}
 
         <SidebarButton
@@ -134,6 +154,17 @@ const PassengerHomeScreen = () => {
               <Ionicons name="calendar" size={20} color="#fff" />
               <Text style={styles.actionButtonText}>My Bookings</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: '#ff6b35' }]}
+              onPress={() => {
+                setMenuOpen(false);
+                handleChatWithUs();
+              }}
+            >
+              <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
+              <Text style={styles.actionButtonText}>Chat Support</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Weather Info */}
@@ -147,6 +178,14 @@ const PassengerHomeScreen = () => {
             <Text style={styles.sectionTitle}>Passenger Tips</Text>
             <Text style={styles.infoText}>
               Arrive at least 30 minutes before your ferry departure. Carry your booking confirmation.
+            </Text>
+          </View>
+
+          {/* Emergency Contact */}
+          <View style={[styles.card, { backgroundColor: '#fff3cd' }]}>
+            <Text style={[styles.sectionTitle, { color: '#856404' }]}>Emergency Contact</Text>
+            <Text style={[styles.infoText, { color: '#856404' }]}>
+              In case of emergency, contact operation staff: +254-700-123456
             </Text>
           </View>
         </ScrollView>
@@ -167,8 +206,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingBottom: 20,
     backgroundColor: '#006699',
-    
-    // height: '100%', // full height by default
   },
   sidebarOpen: {
     width: 200,
@@ -255,21 +292,27 @@ const styles = StyleSheet.create({
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     marginBottom: 25,
+    gap: 10,
   },
   actionButton: {
-    flex: 0.48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
+    paddingHorizontal: 12,
     borderRadius: 10,
+    minWidth: '30%',
+    flex: 1,
+    marginHorizontal: 2,
   },
   actionButtonText: {
     color: '#fff',
-    fontSize: 16,
-    marginLeft: 10,
+    fontSize: 14,
+    marginLeft: 8,
     fontWeight: '600',
+    textAlign: 'center',
   },
 });
 
