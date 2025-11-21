@@ -76,10 +76,15 @@ const StaffHome = ({ navigation }) => {
       const token = await AsyncStorage.getItem('staffToken');
       if (!token) return Alert.alert('Error', 'No token found. Please login again.');
       const response = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` } });
-      // Sort bookings latest first
-      const sortedBookings = (response.data.bookings || []).sort(
-        (a, b) => new Date(b.travel_date) - new Date(a.travel_date)
-      );
+      
+      // Sort bookings by creation date (latest first) - using booking_date or created_at if available
+      const sortedBookings = (response.data.bookings || []).sort((a, b) => {
+        // Try to use booking_date first, then created_at, then travel_date as fallback
+        const dateA = a.booking_date || a.created_at || a.travel_date;
+        const dateB = b.booking_date || b.created_at || b.travel_date;
+        return new Date(dateB) - new Date(dateA);
+      });
+      
       setBookings(sortedBookings);
       setFilteredBookings(sortedBookings);
     } catch (error) {
