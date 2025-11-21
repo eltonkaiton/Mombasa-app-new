@@ -17,8 +17,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 
-const BASE_URL = 'http://http://192.168.100.13:5000/api/inventory/chat';
-const SOCKET_URL = 'http://http://192.168.100.13:5000';
+const BASE_URL = 'http://https://mombasa-backend.onrender.com/api/inventory/chat';
+const SOCKET_URL = 'http://https://mombasa-backend.onrender.com';
 
 export default function InventoryChatScreen({ route, navigation }) {
   const roomId = route?.params?.roomId ?? '';

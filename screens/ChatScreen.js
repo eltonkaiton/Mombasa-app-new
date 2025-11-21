@@ -17,7 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { Picker } from "@react-native-picker/picker";
 
-const API_BASE_URL = "http://192.168.100.13:5000/api/chat";
+const API_BASE_URL = "https://mombasa-backend.onrender.com/api/chat";
 
 const CATEGORY_OPTIONS = [
   { label: "Operation", value: "operation" },

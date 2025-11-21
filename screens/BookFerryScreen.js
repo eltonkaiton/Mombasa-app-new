@@ -37,7 +37,7 @@ const BookingScreen = () => {
   const [amountPaid, setAmountPaid] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const API_BASE_URL = 'http://192.168.100.13:5000';
+  const API_BASE_URL = 'https://mombasa-backend.onrender.com';
 
   const ferryRoutes = [
     'Likoni - Island',

@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet }
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 
-const API_BASE_URL = "http://192.168.100.13:5000";
+const API_BASE_URL = "https://mombasa-backend.onrender.com";
 
 const FinanceMessagesScreen = () => {
   const [messages, setMessages] = useState([]);

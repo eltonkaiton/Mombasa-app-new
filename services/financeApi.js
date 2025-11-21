@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.100.13:5000/finance';
+const BASE_URL = 'https://mombasa-backend.onrender.com/finance';
 
 // ✅ Get auth headers with JWT
 const getAuthHeaders = async () => {

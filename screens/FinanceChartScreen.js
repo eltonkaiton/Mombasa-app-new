@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import axios from "axios";
 
-const API_BASE_URL = "http://192.168.100.13:5000";
+const API_BASE_URL = "https://mombasa-backend.onrender.com";
 
 const FinanceChat = ({ route }) => {
   const { userId, userName } = route.params;

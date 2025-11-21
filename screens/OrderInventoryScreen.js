@@ -13,7 +13,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 
-const API_BASE = 'http://192.168.100.13:5000';
+const API_BASE = 'https://mombasa-backend.onrender.com';
 
 export default function OrderInventoryScreen() {
   const [suppliers, setSuppliers] = useState([]);

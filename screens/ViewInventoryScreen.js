@@ -12,7 +12,7 @@ const ViewInventoryScreen = () => {
 
   const fetchInventory = async () => {
     try {
-      const res = await axios.get('http://192.168.100.13:5000/inventory/all'); // Update this to your IP if testing on device
+      const res = await axios.get('https://mombasa-backend.onrender.com/inventory/all'); // Update this to your IP if testing on device
       setInventory(res.data);
     } catch (error) {
       console.error('Error fetching inventory:', error);

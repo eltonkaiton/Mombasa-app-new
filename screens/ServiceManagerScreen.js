@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const API_BASE_URL = 'http://192.168.100.13:5000';
+const API_BASE_URL = 'https://mombasa-backend.onrender.com';
 const { width } = Dimensions.get('window');
 
 const ServiceManagerScreen = ({ navigation }) => {

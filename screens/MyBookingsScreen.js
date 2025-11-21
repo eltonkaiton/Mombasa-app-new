@@ -15,7 +15,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { Ionicons } from '@expo/vector-icons';
 
-const API_BASE_URL = "http://192.168.100.13:5000";
+const API_BASE_URL = "https://mombasa-backend.onrender.com";
 
 const MyBookingsScreen = () => {
   const [bookings, setBookings] = useState([]);
