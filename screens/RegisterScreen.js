@@ -54,7 +54,7 @@ const RegisterScreen = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post('https://mombasa-backend.onrender.com/users/register', {
+      const res = await axios.post('http://192.168.100.13:5000/users/register', {
         full_name: fullName,
         email,
         phone,

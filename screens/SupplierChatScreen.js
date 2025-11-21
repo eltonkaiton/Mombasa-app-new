@@ -15,7 +15,7 @@ import {
 import io from 'socket.io-client';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const SOCKET_SERVER_URL = 'http://https://mombasa-backend.onrender.com'; // Replace with your backend IP
+const SOCKET_SERVER_URL = 'http://http://192.168.100.13:5000'; // Replace with your backend IP
 const ROOM_ID = 'supplier_123_inventory_1'; // Unique room for supplier ↔ inventory
 
 const SupplierChatScreen = () => {

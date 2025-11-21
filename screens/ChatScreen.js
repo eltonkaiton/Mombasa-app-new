@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
+// ./src/screens/ChatScreen.js
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -14,32 +15,42 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { Picker } from "@react-native-picker/picker";
 
-const API_BASE_URL = "https://mombasa-backend.onrender.com";
+const API_BASE_URL = "http://192.168.100.13:5000/api/chat";
+
+const CATEGORY_OPTIONS = [
+  { label: "Operation", value: "operation" },
+  { label: "Finance", value: "finance" },
+  { label: "Service", value: "service" },
+];
+
+const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 
 const ChatScreen = () => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([]); // messages from server (already filtered)
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("operation"); // default
+  const flatListRef = useRef(null);
 
-  // ✅ Load logged-in user from AsyncStorage
+  // Load logged-in user from AsyncStorage
   useEffect(() => {
     const loadUser = async () => {
       try {
         const data = await AsyncStorage.getItem("user");
         if (data) {
           const parsedUser = JSON.parse(data);
-          console.log("🧍 Loaded user:", parsedUser);
           setUserInfo(parsedUser);
         } else {
-          console.warn("⚠️ No user found in AsyncStorage");
           setFetchError("No user found. Please login again.");
         }
       } catch (error) {
-        console.error("❌ Error loading user:", error);
+        console.error("Error loading user:", error);
         setFetchError("Error loading user data.");
       } finally {
         setIsReady(true);
@@ -48,55 +59,63 @@ const ChatScreen = () => {
     loadUser();
   }, []);
 
-  // ✅ Fetch chat messages from backend - IMPROVED ERROR HANDLING
-  const fetchMessages = useCallback(async () => {
-    if (!userInfo) return;
-    
-    setLoading(true);
-    setFetchError(null);
-    
-    try {
-      const userId = userInfo._id || userInfo.id;
-      console.log("📡 Fetching messages for user ID:", userId);
-      
-      if (!userId) {
-        setFetchError("No user ID found");
-        return;
-      }
+  // Fetch messages for user + selectedCategory
+  const fetchMessages = useCallback(
+    async (opts = { showLoading: true }) => {
+      if (!userInfo) return;
+      if (opts.showLoading) setLoading(true);
+      setFetchError(null);
 
-      const res = await axios.get(`${API_BASE_URL}/api/chat/messages/${userId}`);
-      console.log("✅ Messages response:", res.data);
-      
-      if (res.data.success) {
-        setMessages(res.data.messages || []);
-      } else {
-        setFetchError("Failed to load messages");
-      }
-    } catch (error) {
-      console.error("❌ Error fetching messages:", error.response?.data || error.message);
-      
-      if (error.response?.status === 404) {
-        setFetchError("Chat endpoint not found. The server might be down.");
-      } else if (error.response?.status === 500) {
-        setFetchError("Server error. Please try again later.");
-      } else {
-        setFetchError("Failed to load messages. Check your connection.");
-      }
-      
-      // Set empty messages to avoid crashes
-      setMessages([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [userInfo]);
+      try {
+        const userId = userInfo._id || userInfo.id;
+        if (!userId) {
+          setFetchError("No user ID found.");
+          setMessages([]);
+          return;
+        }
 
+        const res = await axios.get(
+          `${API_BASE_URL}/messages/${userId}/${selectedCategory.toLowerCase()}`
+        );
+
+        if (res.data && res.data.success) {
+          setMessages(res.data.messages || []);
+        } else {
+          setFetchError(res.data?.message || "Failed to load messages.");
+          setMessages([]);
+        }
+      } catch (error) {
+        console.error("Error fetching messages:", error.response?.data || error.message);
+        if (error.response?.status === 404) {
+          setFetchError("Chat endpoint not found. Server might be down.");
+        } else if (error.response?.status === 500) {
+          setFetchError("Server error. Try again later.");
+        } else {
+          setFetchError("Failed to load messages. Check your connection.");
+        }
+        setMessages([]);
+      } finally {
+        if (opts.showLoading) setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [userInfo, selectedCategory]
+  );
+
+  // Fetch on user load and category change
   useEffect(() => {
     if (userInfo) {
       fetchMessages();
     }
-  }, [fetchMessages, userInfo]);
+  }, [userInfo, selectedCategory, fetchMessages]);
 
-  // ✅ Send message - IMPROVED ERROR HANDLING
+  // Pull to refresh handler
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchMessages({ showLoading: false });
+  };
+
+  // Send message with selected category
   const sendMessage = async () => {
     if (!userInfo) {
       Alert.alert("User not found", "Please log in again.");
@@ -108,73 +127,78 @@ const ChatScreen = () => {
     try {
       const userId = userInfo._id || userInfo.id;
       const payload = {
-        userId: userId,
+        userId,
         userName: userInfo.full_name || userInfo.name || "Customer",
         userEmail: userInfo.email || "customer@example.com",
-        staffCategory: "operation",
+        staffCategory: selectedCategory.toLowerCase(),
         message: message.trim(),
       };
 
-      console.log("📤 Sending message with payload:", payload);
+      const res = await axios.post(`${API_BASE_URL}/send-message`, payload);
 
-      const res = await axios.post(`${API_BASE_URL}/api/chat/send-message`, payload);
-      console.log("✅ Send message response:", res.data);
+      if (res.data && res.data.success) {
+        // If backend returns created messages (user + staff auto response), append them.
+        const returnedUserMessage = res.data.data?.userMessage;
+        const returnedStaffMessage = res.data.data?.staffMessage;
 
-      if (res.data.success) {
-        // Add both user message and auto staff response to the chat
-        const newMessages = [
-          ...messages,
-          res.data.data.userMessage,
-          res.data.data.staffMessage
-        ];
-        setMessages(newMessages);
+        // Option A: If backend returns updated conversation, re-fetch
+        // Option B: Locally append returned messages if present
+        if (returnedUserMessage || returnedStaffMessage) {
+          const appended = [...messages];
+          if (returnedUserMessage) appended.push(returnedUserMessage);
+          if (returnedStaffMessage) appended.push(returnedStaffMessage);
+          setMessages(appended);
+        } else {
+          // fallback: re-fetch conversation for reliability
+          await fetchMessages();
+        }
+
         setMessage("");
+        // scroll to bottom after a short delay to allow render
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 250);
       } else {
-        Alert.alert("Failed", res.data.message || "Message not sent. Try again.");
+        Alert.alert("Failed", res.data?.message || "Message not sent. Try again.");
       }
     } catch (error) {
-      console.error("❌ Error sending message:", error.response?.data || error.message);
-      
-      let errorMessage = "Failed to send message. Please try again later.";
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
-      
-      Alert.alert("Error", errorMessage);
+      console.error("Error sending message:", error.response?.data || error.message);
+      const errMsg = error.response?.data?.message || "Failed to send message. Try again later.";
+      Alert.alert("Error", errMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Render chat bubble
-  const renderItem = ({ item }) => (
-    <View
-      style={[
-        styles.messageBubble,
-        item.sender === "user" ? styles.userBubble : styles.staffBubble,
-      ]}
-    >
-      <Text style={[
-        styles.senderLabel,
-        item.sender === "user" ? styles.userSender : styles.staffSender
-      ]}>
-        {item.sender === "user" ? "You" : "Operation Staff"}
-      </Text>
-      <Text style={[
-        styles.messageText,
-        item.sender === "user" ? styles.userMessage : styles.staffMessage
-      ]}>
-        {item.message}
-      </Text>
-      <Text style={styles.timeText}>
-        {new Date(item.timestamp).toLocaleTimeString([], { 
-          hour: '2-digit', minute: '2-digit' 
-        })}
-      </Text>
-    </View>
-  );
+  const renderItem = ({ item }) => {
+    // normalize item fields
+    const sender = (item.sender || "user").toString();
+    const staffCat = (item.staffCategory || "").toString();
+    const timeVal = item.timestamp ? new Date(item.timestamp) : null;
 
-  // ✅ Loading and error states
+    const bubbleSenderLabel =
+      sender === "user" ? "You" : `${capitalize(staffCat || item.userName || "Operation")}`;
+
+    return (
+      <View
+        style={[
+          styles.messageBubble,
+          sender === "user" ? styles.userBubble : styles.staffBubble,
+        ]}
+      >
+        <Text style={[styles.senderLabel, sender === "user" ? styles.userSender : styles.staffSender]}>
+          {bubbleSenderLabel}
+        </Text>
+        <Text style={[styles.messageText, sender === "user" ? styles.userMessage : styles.staffMessage]}>
+          {item.message}
+        </Text>
+        <Text style={styles.timeText}>
+          {timeVal ? timeVal.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+        </Text>
+      </View>
+    );
+  };
+
   if (!isReady) {
     return (
       <View style={styles.centerContainer}>
@@ -195,29 +219,53 @@ const ChatScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chat with Operation Staff</Text>
-        <Text style={styles.headerSubtitle}>We're here to help you</Text>
+        <Text style={styles.headerTitle}>Chat with Staff</Text>
+        <Text style={styles.headerSubtitle}>Choose a department to chat with</Text>
       </View>
 
-      {fetchError ? (
+      {/* Category picker */}
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={selectedCategory}
+          onValueChange={(val) => setSelectedCategory(val)}
+          mode="dropdown"
+        >
+          {CATEGORY_OPTIONS.map((opt) => (
+            <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+          ))}
+        </Picker>
+      </View>
+
+      {loading && messages.length === 0 ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#007bff" />
+          <Text style={styles.loadingText}>Loading messages...</Text>
+        </View>
+      ) : fetchError ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{fetchError}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchMessages}>
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchMessages()}>
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : messages.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No messages yet</Text>
-          <Text style={styles.emptySubtext}>Start a conversation with our operation team</Text>
+          <Text style={styles.emptyText}>No messages yet for {capitalize(selectedCategory)}</Text>
+          <Text style={styles.emptySubtext}>
+            Start a conversation with the {capitalize(selectedCategory)} team
+          </Text>
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={messages}
           renderItem={renderItem}
-          keyExtractor={(item, index) => item._id || `message-${index}`}
+          keyExtractor={(item, index) => item._id || item.id || `message-${index}`}
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
         />
       )}
 
@@ -227,7 +275,7 @@ const ChatScreen = () => {
       >
         <TextInput
           style={styles.input}
-          placeholder="Type your message..."
+          placeholder={`Message ${capitalize(selectedCategory)}...`}
           value={message}
           onChangeText={setMessage}
           multiline
@@ -238,11 +286,7 @@ const ChatScreen = () => {
           onPress={sendMessage}
           disabled={!message.trim() || loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.sendText}>Send</Text>
-          )}
+          {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.sendText}>Send</Text>}
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -252,9 +296,9 @@ const ChatScreen = () => {
 export default ChatScreen;
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#f8f9fa" 
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
   },
   header: {
     backgroundColor: "#007bff",
@@ -275,6 +319,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
     opacity: 0.9,
   },
+  pickerContainer: {
+    backgroundColor: "white",
+    marginTop: 12,
+    marginHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    overflow: "hidden",
+  },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
@@ -286,7 +339,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
   },
-  messageList: { 
+  messageList: {
     padding: 16,
     paddingBottom: 10,
   },
@@ -319,7 +372,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userSender: {
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(255,255,255,0.9)",
   },
   staffSender: {
     color: "#666",
@@ -371,8 +424,8 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: "#ccc",
   },
-  sendText: { 
-    color: "#fff", 
+  sendText: {
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
   },

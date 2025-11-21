@@ -12,7 +12,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
-const BASE_URL = "https://mombasa-backend.onrender.com";
+const BASE_URL = "http://192.168.100.13:5000";
 
 const USER_LOGIN_URL = `${BASE_URL}/users/login`;
 const SUPPLIER_LOGIN_URL = `${BASE_URL}/suppliers/login`;

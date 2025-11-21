@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -24,15 +24,13 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { height } = Dimensions.get('window');
 
-const API_URL = 'https://mombasa-backend.onrender.com/staff-bookings';
-const FERRIES_URL = 'https://mombasa-backend.onrender.com/ferries';
-const APPROVE_URL = 'https://mombasa-backend.onrender.com/staff-bookings/approve';
-const REJECT_URL = 'https://mombasa-backend.onrender.com/staff-bookings/reject';
-const ASSIGN_FERRY_URL = 'https://mombasa-backend.onrender.com/staff-bookings/assign-ferry';
-const RATE_FERRY_URL = 'https://mombasa-backend.onrender.com/staff-bookings/rate-ferry';
-const CHAT_MESSAGES_URL = 'https://mombasa-backend.onrender.com/api/chat/staff-messages';
-const SEND_MESSAGE_URL = 'https://mombasa-backend.onrender.com/api/chat/send-staff-message';
-const CHAT_HISTORY_URL = 'https://mombasa-backend.onrender.com/api/chat/conversation';
+const API_URL = 'http://192.168.100.13:5000/staff-bookings';
+const FERRIES_URL = 'http://192.168.100.13:5000/ferries';
+const APPROVE_URL = 'http://192.168.100.13:5000/staff-bookings/approve';
+const REJECT_URL = 'http://192.168.100.13:5000/staff-bookings/reject';
+const ASSIGN_FERRY_URL = 'http://192.168.100.13:5000/staff-bookings/assign-ferry';
+const RATE_FERRY_URL = 'http://192.168.100.13:5000/staff-bookings/rate-ferry';
+const CHAT_MESSAGES_URL = 'http://192.168.100.13:5000/api/chat/staff-messages';
 
 const StaffHome = ({ navigation }) => {
   const [bookings, setBookings] = useState([]);
@@ -69,19 +67,8 @@ const StaffHome = ({ navigation }) => {
   const [rating, setRating] = useState(0);
 
   // Chat messages state
-  const [chatMessagesModalVisible, setChatMessagesModalVisible] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatMessagesLoading, setChatMessagesLoading] = useState(false);
-
-  // Chat interface state
-  const [chatModalVisible, setChatModalVisible] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [chatHistoryLoading, setChatHistoryLoading] = useState(false);
-  const [sendingMessage, setSendingMessage] = useState(false);
-
-  const flatListRef = useRef(null);
 
   const fetchBookings = async () => {
     try {
@@ -158,20 +145,19 @@ const StaffHome = ({ navigation }) => {
       
       const customerMessages = response.data.messages || [];
       
-      // Check response status for each message
-      const messagesWithResponseStatus = await Promise.all(
-        customerMessages.map(async (msg) => {
-          // Check if there are staff responses to this customer
-          const staffResponse = await checkStaffResponse(msg.userEmail, msg.timestamp);
-          return {
-            ...msg,
-            responded: staffResponse
-          };
-        })
-      );
+      // The API already provides the 'responded' status, so we can use it directly
+      // No need to make additional API calls to check staff responses
+      const processedMessages = customerMessages.map(msg => ({
+        ...msg,
+        // The API response already includes 'responded' field
+      }));
       
-      setChatMessages(messagesWithResponseStatus);
-      setChatMessagesModalVisible(true);
+      setChatMessages(processedMessages);
+      
+      // Navigate to messages screen with the fetched messages
+      navigation.navigate('OperatingStaffMessages', { 
+        messages: processedMessages 
+      });
       
     } catch (error) {
       console.error('Error fetching chat messages:', error.message);
@@ -196,141 +182,12 @@ const StaffHome = ({ navigation }) => {
         }
       ];
       
-      setChatMessages(sampleMessages);
-      setChatMessagesModalVisible(true);
+      // Navigate to messages screen with sample messages
+      navigation.navigate('OperatingStaffMessages', { 
+        messages: sampleMessages 
+      });
     } finally {
       setChatMessagesLoading(false);
-    }
-  };
-
-  // Check if staff has responded to a customer message
-  const checkStaffResponse = async (userEmail, messageTimestamp) => {
-    try {
-      const token = await AsyncStorage.getItem('staffToken');
-      const response = await axios.get(`${CHAT_HISTORY_URL}/${userEmail}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const conversation = response.data.messages || [];
-      // Check if there are any staff messages after the customer's message
-      const staffMessages = conversation.filter(msg => 
-        msg.sender === 'staff' && new Date(msg.timestamp) > new Date(messageTimestamp)
-      );
-      
-      return staffMessages.length > 0;
-    } catch (error) {
-      console.error('Error checking staff response:', error.message);
-      return false;
-    }
-  };
-
-  const fetchChatHistory = async (customer) => {
-    try {
-      setChatHistoryLoading(true);
-      const token = await AsyncStorage.getItem('staffToken');
-      
-      console.log('Fetching chat history for:', customer.userEmail);
-      
-      const response = await axios.get(`${CHAT_HISTORY_URL}/${customer.userEmail}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      console.log('Chat history response:', response.data);
-      
-      // Make sure we have an array of messages and sort them by timestamp
-      const messages = response.data.messages || response.data || [];
-      
-      // Sort messages by timestamp in ascending order (oldest first)
-      const sortedMessages = messages.sort((a, b) => 
-        new Date(a.timestamp) - new Date(b.timestamp)
-      );
-      
-      console.log('Sorted messages:', sortedMessages);
-      
-      setChatHistory(sortedMessages);
-      setSelectedCustomer(customer);
-      setChatModalVisible(true);
-      
-    } catch (error) {
-      console.error('Error fetching chat history:', error.message);
-      // If API fails, show sample chat history with conversation flow
-      const sampleChatHistory = [
-        {
-          _id: '1',
-          sender: 'customer',
-          message: customer.message || 'Hello, I need help with my booking',
-          timestamp: customer.timestamp || new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          userName: customer.userName,
-          userEmail: customer.userEmail
-        },
-        {
-          _id: '2',
-          sender: 'staff',
-          message: 'Hello! Thank you for contacting Mombasa Ferry Services. How can I assist you today?',
-          timestamp: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
-          userName: 'Operation Staff',
-          userEmail: 'operations@mombasaferry.com'
-        }
-      ].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      
-      setChatHistory(sampleChatHistory);
-      setSelectedCustomer(customer);
-      setChatModalVisible(true);
-    } finally {
-      setChatHistoryLoading(false);
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!newMessage.trim()) return;
-    
-    try {
-      setSendingMessage(true);
-      const token = await AsyncStorage.getItem('staffToken');
-      
-      const messageData = {
-        userEmail: selectedCustomer.userEmail,
-        userName: selectedCustomer.userName,
-        staffMessage: newMessage.trim()
-      };
-      
-      console.log('Sending staff message:', messageData);
-      
-      const response = await axios.post(SEND_MESSAGE_URL, messageData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      console.log('Send message response:', response.data);
-      
-      if (response.data.success) {
-        // Add the new message to chat history immediately
-        const newMessageObj = {
-          _id: response.data.data._id || Date.now().toString(),
-          sender: 'staff',
-          message: newMessage.trim(),
-          timestamp: new Date().toISOString(),
-          userName: 'Operation Staff',
-          userEmail: 'operations@mombasaferry.com'
-        };
-        
-        setChatHistory(prev => [...prev, newMessageObj]);
-        setNewMessage('');
-        
-        // Update the responded status in the messages list
-        setChatMessages(prev => 
-          prev.map(msg => 
-            msg.userEmail === selectedCustomer.userEmail ? { ...msg, responded: true } : msg
-          )
-        );
-        
-        Alert.alert('Success', 'Message sent successfully!');
-      }
-      
-    } catch (error) {
-      console.error('Error sending message:', error.message);
-      Alert.alert('Error', 'Failed to send message. Please try again.');
-    } finally {
-      setSendingMessage(false);
     }
   };
 
@@ -654,76 +511,6 @@ const StaffHome = ({ navigation }) => {
     </View>
   );
 
-  const renderChatMessage = ({ item }) => {
-    return (
-      <View style={[
-        styles.chatMessageCard,
-        item.responded && styles.respondedMessage
-      ]}>
-        <Text style={styles.chatUserName}>{item.userName || 'Customer'}</Text>
-        <Text style={styles.chatUserEmail}>{item.userEmail || 'No email provided'}</Text>
-        <Text style={styles.chatMessage}>{item.message || 'No message content'}</Text>
-        <Text style={styles.chatTimestamp}>
-          {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown time'}
-        </Text>
-        <Text style={[
-          styles.chatStatus,
-          item.responded ? styles.statusResponded : styles.statusPending
-        ]}>
-          {item.responded ? 'Responded' : 'Awaiting Response'}
-        </Text>
-        
-        <View style={styles.messageActions}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => {
-              // Pass the correct customer data for chat history
-              const customerData = {
-                userEmail: item.userEmail,
-                userName: item.userName,
-                message: item.message,
-                timestamp: item.timestamp
-              };
-              fetchChatHistory(customerData);
-            }}
-          >
-            <Text style={styles.actionButtonText}>
-              {item.responded ? 'View Conversation' : 'Respond'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
-
-  const renderChatMessageItem = ({ item }) => {
-    // Determine if the message is from staff or customer
-    const isStaff = item.sender === 'staff' || item.userEmail === 'operations@mombasaferry.com';
-    
-    return (
-      <View style={[
-        styles.chatBubble,
-        isStaff ? styles.staffBubble : styles.customerBubble
-      ]}>
-        <Text style={[
-          styles.chatSender,
-          isStaff ? styles.staffSender : styles.customerSender
-        ]}>
-          {isStaff ? 'You (Staff)' : (item.userName || 'Customer')}
-        </Text>
-        <Text style={[
-          styles.chatBubbleText,
-          isStaff ? styles.staffBubbleText : styles.customerBubbleText
-        ]}>
-          {item.message}
-        </Text>
-        <Text style={styles.chatBubbleTime}>
-          {item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Unknown time'}
-        </Text>
-      </View>
-    );
-  };
-
   const formatDateString = (d) => {
     if (!d) return '';
     const dt = new Date(d);
@@ -776,12 +563,14 @@ const StaffHome = ({ navigation }) => {
           <TouchableOpacity style={styles.bottomButton} onPress={() => setBookingModalVisible(true)}>
             <Text style={styles.bottomButtonText}>Book Ferry</Text>
           </TouchableOpacity>
-          {/* New Chat Messages Button */}
+          {/* New Chat Messages Button - Now navigates to dedicated screen */}
           <TouchableOpacity 
             style={[styles.bottomButton, { backgroundColor: '#ff6b35' }]} 
             onPress={fetchChatMessages}
           >
-            <Text style={styles.bottomButtonText}>View Messages</Text>
+            <Text style={styles.bottomButtonText}>
+              {chatMessagesLoading ? 'Loading...' : 'View Messages'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -931,122 +720,6 @@ const StaffHome = ({ navigation }) => {
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Chat Messages Modal */}
-      <Modal
-        visible={chatMessagesModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setChatMessagesModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { maxHeight: height * 0.8 }]}>
-            <Text style={styles.modalTitle}>Customer Messages</Text>
-            <Text style={styles.modalSubtitle}>Manage customer inquiries and conversations</Text>
-            
-            {chatMessagesLoading ? (
-              <ActivityIndicator size="large" color="#007bff" />
-            ) : chatMessages.length === 0 ? (
-              <View style={styles.emptyChatContainer}>
-                <Text style={styles.emptyChatText}>No messages from customers yet.</Text>
-                <Text style={styles.emptyChatSubtext}>Customer messages will appear here when they contact operation staff.</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={chatMessages}
-                keyExtractor={(item) => item._id || item.timestamp}
-                renderItem={renderChatMessage}
-                style={styles.chatList}
-                contentContainerStyle={styles.chatListContent}
-                showsVerticalScrollIndicator={false}
-              />
-            )}
-
-            <TouchableOpacity
-              style={[styles.bookingButton, { backgroundColor: '#6c757d', marginTop: 15 }]}
-              onPress={() => setChatMessagesModalVisible(false)}
-            >
-              <Text style={styles.buttonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Chat Interface Modal */}
-      <Modal
-        visible={chatModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setChatModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { maxHeight: height * 0.8, width: '90%' }]}>
-            <View style={styles.chatHeader}>
-              <Text style={styles.chatTitle}>Chat with {selectedCustomer?.userName || 'Customer'}</Text>
-              <Text style={styles.chatSubtitle}>{selectedCustomer?.userEmail}</Text>
-              <Text style={styles.chatInfo}>Full conversation history</Text>
-            </View>
-
-            {chatHistoryLoading ? (
-              <View style={styles.chatLoading}>
-                <ActivityIndicator size="large" color="#007bff" />
-                <Text>Loading conversation...</Text>
-              </View>
-            ) : (
-              <>
-                <FlatList
-                  ref={flatListRef}
-                  data={chatHistory}
-                  keyExtractor={(item) => item._id || item.timestamp || Math.random().toString()}
-                  renderItem={renderChatMessageItem}
-                  style={styles.chatHistory}
-                  contentContainerStyle={styles.chatHistoryContent}
-                  showsVerticalScrollIndicator={true}
-                  onContentSizeChange={() => {
-                    if (flatListRef.current && chatHistory.length > 0) {
-                      flatListRef.current.scrollToEnd({ animated: true });
-                    }
-                  }}
-                />
-                
-                <View style={styles.chatInputContainer}>
-                  <TextInput
-                    style={styles.chatInput}
-                    placeholder="Type your response..."
-                    value={newMessage}
-                    onChangeText={setNewMessage}
-                    multiline
-                    maxLength={500}
-                  />
-                  <TouchableOpacity
-                    style={[styles.sendButton, sendingMessage && styles.sendButtonDisabled]}
-                    onPress={sendMessage}
-                    disabled={sendingMessage || !newMessage.trim()}
-                  >
-                    {sendingMessage ? (
-                      <ActivityIndicator size="small" color="white" />
-                    ) : (
-                      <Text style={styles.sendButtonText}>Send</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-
-            <TouchableOpacity
-              style={[styles.bookingButton, { backgroundColor: '#6c757d', marginTop: 15 }]}
-              onPress={() => {
-                setChatModalVisible(false);
-                setSelectedCustomer(null);
-                setChatHistory([]);
-                setNewMessage('');
-              }}
-            >
-              <Text style={styles.buttonText}>Close Chat</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1360,184 +1033,5 @@ const styles = StyleSheet.create({
   clearEmptySearchText: {
     color: '#fff',
     fontWeight: 'bold',
-  },
-  
-  // Chat Messages Styles
-  chatList: { maxHeight: 400 },
-  chatListContent: { paddingBottom: 10 },
-  chatMessageCard: {
-    backgroundColor: 'white',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  respondedMessage: {
-    borderLeftColor: '#28a745',
-    backgroundColor: '#f8fff9',
-  },
-  chatUserName: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  chatUserEmail: { fontSize: 12, color: '#6c757d', marginBottom: 8 },
-  chatMessage: { fontSize: 14, lineHeight: 20, marginBottom: 8 },
-  chatTimestamp: { fontSize: 11, color: '#999', marginBottom: 8 },
-  chatStatus: { fontSize: 12, fontWeight: 'bold', marginBottom: 8 },
-  statusPending: { color: '#dc3545' },
-  statusResponded: { color: '#28a745' },
-  messageActions: { 
-    flexDirection: 'row', 
-    gap: 8,
-    marginTop: 8,
-  },
-  actionButton: {
-    backgroundColor: '#007bff',
-    padding: 8,
-    borderRadius: 4,
-    flex: 1,
-  },
-  actionButtonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  emptyChatContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyChatText: {
-    fontSize: 16,
-    color: '#6c757d',
-    marginBottom: 8,
-  },
-  emptyChatSubtext: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-  },
-
-  // Chat Interface Styles
-  chatHeader: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingBottom: 15,
-    marginBottom: 15,
-  },
-  chatTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  chatSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 5,
-  },
-  chatInfo: {
-    fontSize: 12,
-    color: '#999',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  chatHistory: {
-    flex: 1,
-    maxHeight: 300,
-    marginBottom: 15,
-  },
-  chatHistoryContent: {
-    padding: 10,
-  },
-  chatBubble: {
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-    maxWidth: '80%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  staffBubble: {
-    backgroundColor: '#007bff',
-    alignSelf: 'flex-end',
-    borderBottomRightRadius: 4,
-  },
-  customerBubble: {
-    backgroundColor: '#e9ecef',
-    alignSelf: 'flex-start',
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-  },
-  chatSender: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  staffSender: {
-    color: 'rgba(255,255,255,0.9)',
-  },
-  customerSender: {
-    color: '#495057',
-  },
-  chatBubbleText: {
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  staffBubbleText: {
-    color: 'white',
-  },
-  customerBubbleText: {
-    color: '#212529',
-  },
-  chatBubbleTime: {
-    fontSize: 10,
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  chatInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingTop: 15,
-  },
-  chatInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginRight: 10,
-    maxHeight: 100,
-    backgroundColor: '#f8f9fa',
-  },
-  sendButton: {
-    backgroundColor: '#007bff',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#6c757d',
-    opacity: 0.6,
-  },
-  sendButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  chatLoading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
 });

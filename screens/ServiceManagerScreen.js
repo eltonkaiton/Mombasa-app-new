@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const API_BASE_URL = 'https://mombasa-backend.onrender.com';
+const API_BASE_URL = 'http://192.168.100.13:5000';
 const { width } = Dimensions.get('window');
 
 const ServiceManagerScreen = ({ navigation }) => {
@@ -44,8 +44,12 @@ const ServiceManagerScreen = ({ navigation }) => {
   const [pdfContent, setPdfContent] = useState('');
   const [pdfTitle, setPdfTitle] = useState('');
 
+  // Messages state
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
   useEffect(() => {
     fetchDashboardData();
+    fetchUnreadMessagesCount();
   }, []);
 
   useEffect(() => {
@@ -97,6 +101,25 @@ const ServiceManagerScreen = ({ navigation }) => {
     }
   };
 
+  const fetchUnreadMessagesCount = async () => {
+    try {
+      const token = await AsyncStorage.getItem('staffToken');
+      if (!token) return;
+
+      // You'll need to implement this endpoint in your backend
+      const response = await axios.get(`${API_BASE_URL}/service/messages/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data) {
+        setUnreadMessagesCount(response.data.unreadCount || 0);
+      }
+    } catch (err) {
+      console.log('Error fetching unread messages count:', err);
+      // Don't show error for this as it's not critical
+    }
+  };
+
   const applySearchFilter = () => {
     if (!searchQuery.trim()) {
       setFilteredFerries(ferries);
@@ -137,6 +160,7 @@ const ServiceManagerScreen = ({ navigation }) => {
     setRefreshing(true);
     setSearchQuery('');
     fetchDashboardData();
+    fetchUnreadMessagesCount();
   };
 
   const handleLogout = async () => {
@@ -154,6 +178,11 @@ const ServiceManagerScreen = ({ navigation }) => {
     setSelectedSection(section);
     setSearchQuery('');
     setSidebarVisible(false);
+  };
+
+  const navigateToMessages = () => {
+    setSidebarVisible(false);
+    navigation.navigate('ServiceMessages');
   };
 
   const handleAddFerry = async () => {
@@ -418,6 +447,23 @@ const ServiceManagerScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // Messages Button Component for Header
+  const renderMessagesButton = () => (
+    <TouchableOpacity 
+      style={styles.messagesButton}
+      onPress={navigateToMessages}
+    >
+      <Icon name="message" size={20} color="#FFFFFF" />
+      {unreadMessagesCount > 0 && (
+        <View style={styles.messageBadge}>
+          <Text style={styles.messageBadgeText}>
+            {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
   // PDF Receipt Modal
   const renderPDFModal = () => (
     <Modal
@@ -487,6 +533,25 @@ const ServiceManagerScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
         ))}
+
+        {/* Messages Section */}
+        <Text style={styles.sidebarSectionTitle}>COMMUNICATION</Text>
+        <TouchableOpacity
+          style={styles.sidebarItem}
+          onPress={navigateToMessages}
+        >
+          <Icon name="message" size={20} color="#E2E8F0" />
+          <Text style={styles.sidebarText}>
+            Messages
+          </Text>
+          {unreadMessagesCount > 0 && (
+            <View style={styles.sidebarMessageBadge}>
+              <Text style={styles.sidebarMessageBadgeText}>
+                {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         {/* Information Sections */}
         <Text style={styles.sidebarSectionTitle}>SUPPORT</Text>
@@ -776,7 +841,7 @@ const ServiceManagerScreen = ({ navigation }) => {
             <Icon name="menu" size={28} color="#1A1F2E" />
           </TouchableOpacity>
           <Text style={styles.sectionTitle}>Dashboard</Text>
-          <View style={styles.headerSpacer} />
+          {renderMessagesButton()}
         </View>
 
         {error && (
@@ -857,9 +922,12 @@ const ServiceManagerScreen = ({ navigation }) => {
             <Icon name="menu" size={28} color="#1A1F2E" />
           </TouchableOpacity>
           <Text style={styles.sectionTitle}>Ferry Management</Text>
-          <TouchableOpacity style={styles.addButton} onPress={() => setAddFerryModal(true)}>
-            <Icon name="add" size={24} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            {renderMessagesButton()}
+            <TouchableOpacity style={styles.addButton} onPress={() => setAddFerryModal(true)}>
+              <Icon name="add" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {renderSearchBar()}
@@ -906,7 +974,7 @@ const ServiceManagerScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>
             {isSearching ? 'Search Results - Bookings' : 'All Bookings (Latest First)'}
           </Text>
-          <View style={styles.headerSpacer} />
+          {renderMessagesButton()}
         </View>
 
         {renderSearchBar()}
@@ -1077,6 +1145,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   menuButton: {
     padding: 4,
   },
@@ -1087,8 +1159,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
   },
-  headerSpacer: {
-    width: 32,
+  messagesButton: {
+    backgroundColor: '#3182CE',
+    padding: 8,
+    borderRadius: 8,
+    marginRight: 8,
+    position: 'relative',
+  },
+  messageBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#E53E3E',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  messageBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   addButton: {
     backgroundColor: '#FF6B35',
@@ -1598,6 +1691,21 @@ const styles = StyleSheet.create({
   sidebarTextActive: {
     color: '#FFFFFF',
     fontWeight: 'bold',
+  },
+  sidebarMessageBadge: {
+    backgroundColor: '#E53E3E',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 'auto',
+  },
+  sidebarMessageBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   logoutButton: {
     flexDirection: 'row',

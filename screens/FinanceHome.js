@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ActivityIndicator,
-  TouchableOpacity, Alert, TextInput, Modal, Pressable
+  TouchableOpacity, Alert, TextInput
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from 'expo-sharing';
 
-// ✅ Corrected imports with aliases
 import {
   fetchFinanceSummary,
   fetchBookings,
@@ -89,7 +87,6 @@ const FinanceHome = () => {
     }
   };
 
-  // ✅ Generate PDF for all bookings
   const handleDownloadAllBookings = async () => {
     try {
       if (!bookings.length) {
@@ -154,7 +151,6 @@ const FinanceHome = () => {
     }
   };
 
-  // ✅ Generate professional PDF receipt for one booking
   const handleDownloadReceipt = async (booking) => {
     try {
       const html = `
@@ -203,124 +199,120 @@ const FinanceHome = () => {
     }
   };
 
-  const renderBooking = ({ item }) => {
-    return (
-      <View style={styles.bookingCard}>
-        <Text style={styles.bookingText}>User: {item.user_id?.full_name || 'N/A'}</Text>
-        <Text style={styles.bookingText}>Amount: KES {item.amount_paid}</Text>
-        <Text style={styles.bookingText}>Booking Type: {item.booking_type}</Text>
-        <Text style={styles.bookingText}>Route: {item.route}</Text>
-        <Text style={styles.bookingText}>Date: {item.travel_date}</Text>
-        <Text style={styles.bookingText}>Time: {item.travel_time}</Text>
+  const renderBooking = ({ item }) => (
+    <View style={styles.bookingCard}>
+      <Text style={styles.bookingText}>User: {item.user_id?.full_name || 'N/A'}</Text>
+      <Text style={styles.bookingText}>Amount: KES {item.amount_paid}</Text>
+      <Text style={styles.bookingText}>Booking Type: {item.booking_type}</Text>
+      <Text style={styles.bookingText}>Route: {item.route}</Text>
+      <Text style={styles.bookingText}>Date: {item.travel_date}</Text>
+      <Text style={styles.bookingText}>Time: {item.travel_time}</Text>
 
-        {item.booking_type === 'passenger' && (
-          <Text style={styles.bookingText}>Passengers: {item.num_passengers}</Text>
-        )}
-        {item.booking_type === 'vehicle' && (
+      {item.booking_type === 'passenger' && <Text style={styles.bookingText}>Passengers: {item.num_passengers}</Text>}
+      {item.booking_type === 'vehicle' && (
+        <>
+          <Text style={styles.bookingText}>Vehicle Type: {item.vehicle_type}</Text>
+          <Text style={styles.bookingText}>Plate: {item.vehicle_plate}</Text>
+        </>
+      )}
+      {item.booking_type === 'cargo' && (
+        <>
+          <Text style={styles.bookingText}>Cargo: {item.cargo_description}</Text>
+          <Text style={styles.bookingText}>Weight (kg): {item.cargo_weight_kg}</Text>
+        </>
+      )}
+
+      <Text style={styles.bookingText}>Payment Status: {item.payment_status}</Text>
+      <Text style={styles.bookingText}>Booking Status: {item.booking_status}</Text>
+      <Text style={styles.bookingText}>Created: {new Date(item.created_at).toLocaleDateString()}</Text>
+
+      <View style={styles.buttonRow}>
+        {item.payment_status === 'pending' && (
           <>
-            <Text style={styles.bookingText}>Vehicle Type: {item.vehicle_type}</Text>
-            <Text style={styles.bookingText}>Plate: {item.vehicle_plate}</Text>
+            <TouchableOpacity onPress={() => handleApprovePayment(item._id)} style={styles.approveBtn}>
+              <Text style={styles.btnText}>Approve Payment</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleRejectPayment(item._id)} style={styles.rejectBtn}>
+              <Text style={styles.btnText}>Reject Payment</Text>
+            </TouchableOpacity>
           </>
         )}
-        {item.booking_type === 'cargo' && (
-          <>
-            <Text style={styles.bookingText}>Cargo: {item.cargo_description}</Text>
-            <Text style={styles.bookingText}>Weight (kg): {item.cargo_weight_kg}</Text>
-          </>
-        )}
-
-        <Text style={styles.bookingText}>Payment Status: {item.payment_status}</Text>
-        <Text style={styles.bookingText}>Booking Status: {item.booking_status}</Text>
-        <Text style={styles.bookingText}>Created: {new Date(item.created_at).toLocaleDateString()}</Text>
-
-        <View style={styles.buttonRow}>
-          {item.payment_status === 'pending' && (
-            <>
-              <TouchableOpacity onPress={() => handleApprovePayment(item._id)} style={styles.approveBtn}>
-                <Text style={styles.btnText}>Approve Payment</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleRejectPayment(item._id)} style={styles.rejectBtn}>
-                <Text style={styles.btnText}>Reject Payment</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          <TouchableOpacity
-            onPress={() => handleDownloadReceipt(item)}
-            style={[styles.approveBookingBtn, { backgroundColor: '#8e44ad', marginTop: 8 }]}
-          >
-            <Text style={styles.btnText}>Download/View Receipt</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={() => handleDownloadReceipt(item)}
+          style={[styles.approveBookingBtn, { backgroundColor: '#8e44ad', marginTop: 8 }]}
+        >
+          <Text style={styles.btnText}>Download/View Receipt</Text>
+        </TouchableOpacity>
       </View>
-    );
-  };
+    </View>
+  );
 
-  if (loading) {
-    return <ActivityIndicator size="large" color="#0077b6" style={{ marginTop: 40 }} />;
-  }
+  if (loading) return <ActivityIndicator size="large" color="#0077b6" style={{ marginTop: 40 }} />;
 
   return (
-    <>
-      <FlatList
-        data={filteredBookings}
-        keyExtractor={(item) => item._id?.toString() || Math.random().toString()}
-        renderItem={renderBooking}
-        contentContainerStyle={styles.container}
-        ListHeaderComponent={
-          <>
-            <Text style={styles.heading}>Finance Dashboard</Text>
+    <FlatList
+      data={filteredBookings}
+      keyExtractor={(item) => item._id?.toString() || Math.random().toString()}
+      renderItem={renderBooking}
+      contentContainerStyle={styles.container}
+      ListHeaderComponent={
+        <>
+          <Text style={styles.heading}>Finance Dashboard</Text>
 
-            {summary && (
-              <View style={styles.summaryCard}>
-                <Text>Total Bookings: {summary.totalBookings}</Text>
-                <Text>Total Orders: {summary.totalOrders}</Text>
-                <Text>Total Revenue: KES {summary.totalRevenue}</Text>
-                <Text>Pending: KES {summary.pendingAmount}</Text>
-                <Text>Rejected: KES {summary.rejectedAmount}</Text>
-              </View>
-            )}
-
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by user name"
-              value={search}
-              onChangeText={setSearch}
-            />
-
-            <View style={styles.navButtons}>
-              <TouchableOpacity style={styles.navBtn} onPress={() => loadData()}>
-                <Text style={styles.btnText}>Bookings</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.navBtn} onPress={() => navigation.navigate('FinanceOrders')}>
-                <Text style={styles.btnText}>Orders</Text>
-              </TouchableOpacity>
+          {summary && (
+            <View style={styles.summaryCard}>
+              <Text>Total Bookings: {summary.totalBookings}</Text>
+              <Text>Total Orders: {summary.totalOrders}</Text>
+              <Text>Total Revenue: KES {summary.totalRevenue}</Text>
+              <Text>Pending: KES {summary.pendingAmount}</Text>
+              <Text>Rejected: KES {summary.rejectedAmount}</Text>
             </View>
+          )}
 
-            <TouchableOpacity
-              style={[styles.navBtn, { backgroundColor: '#8e44ad', marginVertical: 10 }]}
-              onPress={handleDownloadAllBookings}
-            >
-              <Text style={styles.btnText}>Download All Bookings</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by user name"
+            value={search}
+            onChangeText={setSearch}
+          />
+
+          <View style={styles.navButtons}>
+            <TouchableOpacity style={styles.navBtn} onPress={() => loadData()}>
+              <Text style={styles.btnText}>Bookings</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.navBtn} onPress={() => navigation.navigate('FinanceOrders')}>
+              <Text style={styles.btnText}>Orders</Text>
+            </TouchableOpacity>
+            {/* ✅ Messages button for finance officer */}
+            <TouchableOpacity style={[styles.navBtn, { backgroundColor: '#16a085' }]} onPress={() => navigation.navigate('FinanceMessages')}>
+              <Text style={styles.btnText}>Messages</Text>
+            </TouchableOpacity>
+          </View>
 
-            <View style={styles.headerButtons}>
-              <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('AboutUs')}>
-                <Text style={styles.btnText}>About Us</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('Help')}>
-                <Text style={styles.btnText}>Help</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('ContactUs')}>
-                <Text style={styles.btnText}>Contact Us</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.headerBtn, { backgroundColor: 'red' }]} onPress={handleLogout}>
-                <Text style={styles.btnText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        }
-      />
-    </>
+          <TouchableOpacity
+            style={[styles.navBtn, { backgroundColor: '#8e44ad', marginVertical: 10 }]}
+            onPress={handleDownloadAllBookings}
+          >
+            <Text style={styles.btnText}>Download All Bookings</Text>
+          </TouchableOpacity>
+
+          <View style={styles.headerButtons}>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('AboutUs')}>
+              <Text style={styles.btnText}>About Us</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('Help')}>
+              <Text style={styles.btnText}>Help</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate('ContactUs')}>
+              <Text style={styles.btnText}>Contact Us</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.headerBtn, { backgroundColor: 'red' }]} onPress={handleLogout}>
+              <Text style={styles.btnText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      }
+    />
   );
 };
 

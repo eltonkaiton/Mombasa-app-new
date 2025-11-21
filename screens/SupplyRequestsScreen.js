@@ -1,4 +1,4 @@
-// 📱 SupplierSupplyScreen.js — Accept/Reject + Supply (limit <100,000) + Delivery + Always Show Receipt + Submitted Button + 🔍 Search
+// 📱 SupplierSupplyScreen.js — Fully Fixed & Updated
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -17,7 +17,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 
-const API_URL = 'https://mombasa-backend.onrender.com/suppliers';
+const API_URL = 'http://192.168.100.13:5000/suppliers';
 
 export default function SupplierSupplyScreen() {
   const [orders, setOrders] = useState([]);
@@ -26,9 +26,11 @@ export default function SupplierSupplyScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState(null);
   const [amount, setAmount] = useState('');
+  const [modalWarning, setModalWarning] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmingPaymentIds, setConfirmingPaymentIds] = useState([]); // Track disabling
 
-  // ✅ Fetch supplier's orders
+  // Fetch supplier's orders
   const fetchOrders = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -44,7 +46,7 @@ export default function SupplierSupplyScreen() {
     }
   };
 
-  // ✅ Accept order
+  // Accept order
   const acceptOrder = async (id) => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -57,7 +59,7 @@ export default function SupplierSupplyScreen() {
     }
   };
 
-  // ✅ Reject order
+  // Reject order
   const rejectOrder = async (id) => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -70,20 +72,24 @@ export default function SupplierSupplyScreen() {
     }
   };
 
-  // ✅ Submit supply amount (must be < 100,000)
+  // Live validation for modal amount input
+  const handleAmountChange = (text) => {
+    setAmount(text);
+    const value = parseFloat(text);
+    if (isNaN(value) || value <= 0) {
+      setModalWarning('Enter a positive number');
+    } else if (value >= 100000) {
+      setModalWarning('Amount must be less than 100,000 KES');
+    } else {
+      setModalWarning('');
+    }
+  };
+
+  // Submit supply amount (<100,000)
   const submitSupply = async () => {
     try {
       const supplyAmount = parseFloat(amount);
-
-      if (isNaN(supplyAmount) || supplyAmount <= 0) {
-        Alert.alert("Invalid Input", "Please enter a valid positive amount.");
-        return;
-      }
-
-      if (supplyAmount >= 100000) {
-        Alert.alert("Limit Exceeded", "The supply amount must be less than 100,000 KES.");
-        return;
-      }
+      if (modalWarning) return;
 
       const token = await AsyncStorage.getItem('token');
       await axios.put(`${API_URL}/supply/${currentOrderId}`, { amount: supplyAmount }, {
@@ -92,13 +98,15 @@ export default function SupplierSupplyScreen() {
 
       setModalVisible(false);
       setAmount('');
-      fetchOrders(); // refresh orders to update the button
+      setModalWarning('');
+      fetchOrders();
     } catch (err) {
       console.error('❌ Submit supply failed:', err.response?.data || err.message);
+      Alert.alert('Error', 'Failed to submit supply amount.');
     }
   };
 
-  // ✅ Mark as delivered
+  // Mark as delivered
   const markDelivered = async (id) => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -111,7 +119,26 @@ export default function SupplierSupplyScreen() {
     }
   };
 
-  // ✅ Download/View receipt (bordered table + signature)
+  // ✅ Confirm Payment Received (button disables immediately)
+  const markReceived = async (id) => {
+    try {
+      setConfirmingPaymentIds((prev) => [...prev, id]); // disable button
+      const token = await AsyncStorage.getItem('token');
+      await axios.put(`${API_URL}/confirm-payment/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // update local state instead of full fetch
+      setOrders((prev) => prev.map(o => o._id === id ? { ...o, payment_confirmation: 'received' } : o));
+      setFilteredOrders((prev) => prev.map(o => o._id === id ? { ...o, payment_confirmation: 'received' } : o));
+    } catch (err) {
+      console.error('❌ Confirm payment failed:', err.response?.data || err.message);
+      Alert.alert('Error', 'Failed to confirm payment received.');
+    } finally {
+      setConfirmingPaymentIds((prev) => prev.filter(orderId => orderId !== id));
+    }
+  };
+
+  // Download/View receipt
   const viewReceipt = async (receiptUrl, item) => {
     try {
       const fileUri = FileSystem.documentDirectory + `${item.item_id?.item_name || 'receipt'}_${item._id}.pdf`;
@@ -156,7 +183,6 @@ export default function SupplierSupplyScreen() {
             </body>
           </html>
         `;
-
         const { uri } = await Print.printToFileAsync({ html });
         await FileSystem.moveAsync({ from: uri, to: fileUri });
         await Sharing.shareAsync(fileUri);
@@ -167,7 +193,7 @@ export default function SupplierSupplyScreen() {
     }
   };
 
-  // ✅ Search functionality
+  // Search functionality
   const handleSearch = (text) => {
     setSearchQuery(text);
     if (!text.trim()) {
@@ -187,7 +213,6 @@ export default function SupplierSupplyScreen() {
     fetchOrders();
   }, []);
 
-  // ✅ Render each order
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Text style={styles.itemText}>Item: {item.item_id?.item_name || 'Unknown Item'}</Text>
@@ -207,7 +232,13 @@ export default function SupplierSupplyScreen() {
         </View>
       )}
 
-      {item.status === 'approved' && item.finance_status === 'pending' && (
+      {item.status === 'approved' && item.delivery_status === 'pending' && (
+        <TouchableOpacity style={[styles.button, { backgroundColor: '#2980b9' }]} onPress={() => markDelivered(item._id)}>
+          <Text style={styles.buttonText}>Mark as Delivered</Text>
+        </TouchableOpacity>
+      )}
+
+      {item.status === 'approved' && item.delivery_status === 'received' && item.finance_status === 'pending' && (
         <TouchableOpacity
           style={[styles.button, item.amount ? { backgroundColor: '#95a5a6' } : {}]}
           onPress={() => { setCurrentOrderId(item._id); setModalVisible(true); }}
@@ -217,13 +248,21 @@ export default function SupplierSupplyScreen() {
         </TouchableOpacity>
       )}
 
-      {item.finance_status === 'approved' && item.delivery_status === 'pending' && (
-        <TouchableOpacity style={[styles.button, { backgroundColor: '#2980b9' }]} onPress={() => markDelivered(item._id)}>
-          <Text style={styles.buttonText}>Mark as Delivered</Text>
+      {item.status === 'approved' &&
+       item.delivery_status === 'received' &&
+       item.finance_status === 'approved' &&
+       item.payment_confirmation !== 'received' && (
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: '#16a085' }]}
+          onPress={() => markReceived(item._id)}
+          disabled={confirmingPaymentIds.includes(item._id)}
+        >
+          <Text style={styles.buttonText}>
+            {confirmingPaymentIds.includes(item._id) ? 'Confirming...' : 'Confirm Payment Received'}
+          </Text>
         </TouchableOpacity>
       )}
 
-      {/* ✅ Always show Receipt button */}
       <TouchableOpacity
         style={[styles.button, { backgroundColor: '#8e44ad' }]}
         onPress={() => viewReceipt(item.receipt_url, item)}
@@ -236,8 +275,6 @@ export default function SupplierSupplyScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Supply Requests</Text>
-
-      {/* 🔍 Search Bar */}
       <TextInput
         style={styles.searchInput}
         placeholder="Search by item, status, finance, or delivery..."
@@ -256,23 +293,30 @@ export default function SupplierSupplyScreen() {
         />
       )}
 
-      {/* Supply Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Enter Amount (KES)</Text>
             <TextInput
               value={amount}
-              onChangeText={setAmount}
+              onChangeText={handleAmountChange}
               keyboardType="numeric"
               placeholder="e.g. 15000"
-              style={styles.input}
+              style={[styles.input, modalWarning ? { borderColor: 'red' } : {}]}
             />
+            {modalWarning ? <Text style={{ color: 'red', marginBottom: 10, textAlign: 'center' }}>{modalWarning}</Text> : null}
             <View style={styles.modalButtonRow}>
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#27ae60' }]} onPress={submitSupply}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#27ae60', opacity: modalWarning ? 0.6 : 1 }]}
+                onPress={submitSupply}
+                disabled={!!modalWarning}
+              >
                 <Text style={styles.modalButtonText}>Submit</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#c0392b' }]} onPress={() => { setModalVisible(false); setAmount(''); }}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#c0392b' }]}
+                onPress={() => { setModalVisible(false); setAmount(''); setModalWarning(''); }}
+              >
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -286,14 +330,7 @@ export default function SupplierSupplyScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#eef6fa' },
   header: { fontSize: 22, fontWeight: 'bold', marginBottom: 12, color: '#0077b6' },
-  searchInput: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
+  searchInput: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#ccc' },
   card: { padding: 12, backgroundColor: '#fff', marginBottom: 10, borderRadius: 8, elevation: 2 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
   button: { flex: 1, backgroundColor: '#0077b6', padding: 10, margin: 4, borderRadius: 5 },
@@ -302,7 +339,7 @@ const styles = StyleSheet.create({
   modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#00000088' },
   modalContent: { backgroundColor: '#fff', padding: 20, borderRadius: 12, width: '80%' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 20 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 10 },
   modalButtonRow: { flexDirection: 'row', justifyContent: 'space-between' },
   modalButton: { flex: 1, padding: 12, borderRadius: 8, marginHorizontal: 5 },
   modalButtonText: { color: '#fff', fontWeight: '600', textAlign: 'center' },
