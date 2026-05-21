@@ -71,7 +71,7 @@ const BookFerryContent = () => {
     };
 
     try {
-      const response = await axios.post('https://mombasa-backend.onrender.com/api/bookings', payload);
+      const response = await axios.post('https://mombasa-backend-1.onrender.com/api/bookings', payload);
       Alert.alert('Success', 'Booking submitted successfully!');
       console.log('Server response:', response.data);
 

@@ -24,13 +24,13 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { height } = Dimensions.get('window');
 
-const API_URL = 'https://mombasa-backend.onrender.com/staff-bookings';
-const FERRIES_URL = 'https://mombasa-backend.onrender.com/ferries';
-const APPROVE_URL = 'https://mombasa-backend.onrender.com/staff-bookings/approve';
-const REJECT_URL = 'https://mombasa-backend.onrender.com/staff-bookings/reject';
-const ASSIGN_FERRY_URL = 'https://mombasa-backend.onrender.com/staff-bookings/assign-ferry';
-const RATE_FERRY_URL = 'https://mombasa-backend.onrender.com/staff-bookings/rate-ferry';
-const CHAT_MESSAGES_URL = 'https://mombasa-backend.onrender.com/api/chat/staff-messages';
+const API_URL = 'https://mombasa-backend-1.onrender.com/staff-bookings';
+const FERRIES_URL = 'https://mombasa-backend-1.onrender.com/ferries';
+const APPROVE_URL = 'https://mombasa-backend-1.onrender.com/staff-bookings/approve';
+const REJECT_URL = 'https://mombasa-backend-1.onrender.com/staff-bookings/reject';
+const ASSIGN_FERRY_URL = 'https://mombasa-backend-1.onrender.com/staff-bookings/assign-ferry';
+const RATE_FERRY_URL = 'https://mombasa-backend-1.onrender.com/staff-bookings/rate-ferry';
+const CHAT_MESSAGES_URL = 'https://mombasa-backend-1.onrender.com/api/chat/staff-messages';
 
 const StaffHome = ({ navigation }) => {
   const [bookings, setBookings] = useState([]);

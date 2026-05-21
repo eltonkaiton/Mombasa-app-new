@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import axios from "axios";
 
-const API_BASE_URL = "https://mombasa-backend.onrender.com";
+const API_BASE_URL = "https://mombasa-backend-1.onrender.com";
 
 const ServiceChat = ({ route }) => {
   const { userId, userName } = route.params;

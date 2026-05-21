@@ -19,8 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
-const CHAT_HISTORY_URL = 'https://mombasa-backend.onrender.com/api/chat/conversation';
-const SEND_MESSAGE_URL = 'https://mombasa-backend.onrender.com/api/chat/send-staff-message';
+const CHAT_HISTORY_URL = 'https://mombasa-backend-1.onrender.com/api/chat/conversation';
+const SEND_MESSAGE_URL = 'https://mombasa-backend-1.onrender.com/api/chat/send-staff-message';
 
 const OperatingStaffChatScreen = ({ navigation, route }) => {
   const { customer } = route.params || {};

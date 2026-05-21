@@ -61,7 +61,7 @@ const UploadInventoryScreen = () => {
       };
 
       const response = await axios.post(
-        'https://mombasa-backend.onrender.com/inventory/items',
+        'https://mombasa-backend-1.onrender.com/inventory/items',
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -117,7 +117,7 @@ const UploadInventoryScreen = () => {
       });
 
       const response = await axios.post(
-        'https://mombasa-backend.onrender.com/inventory/upload',
+        'https://mombasa-backend-1.onrender.com/inventory/upload',
         formData,
         {
           headers: {

@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const API_URL = "http://https://mombasa-backend.onrender.com/api/ferrycrew";
+const API_URL = "http://https://mombasa-backend-1.onrender.com/api/ferrycrew";
 
 // ------------------------
 // Helper to get auth headers

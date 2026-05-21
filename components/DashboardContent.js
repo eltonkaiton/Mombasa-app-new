@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 
-const API_BASE_URL = 'https://mombasa-backend.onrender.com/api';
+const API_BASE_URL = 'https://mombasa-backend-1.onrender.com/api';
 
 const DashboardContent = () => {
   const [summary, setSummary] = useState({

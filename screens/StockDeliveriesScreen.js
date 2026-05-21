@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
-const BASE_URL = 'https://mombasa-backend.onrender.com/inventory';
+const BASE_URL = 'https://mombasa-backend-1.onrender.com/inventory';
 
 const StockDeliveryScreen = () => {
   const [deliveries, setDeliveries] = useState([]);

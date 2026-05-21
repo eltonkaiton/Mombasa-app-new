@@ -31,7 +31,7 @@ const DashboardScreen = () => {
         if (!token) throw new Error('No token found, please login again.');
 
         // Fetch dashboard stats from backend with Authorization header
-        const response = await axios.get('https://mombasa-backend.onrender.com/api/users/dashboard', {
+        const response = await axios.get('https://mombasa-backend-1.onrender.com/api/users/dashboard', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

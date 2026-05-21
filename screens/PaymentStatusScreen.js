@@ -11,7 +11,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_URL = 'http://https://mombasa-backend.onrender.com/api/suppliers';
+const API_URL = 'http://https://mombasa-backend-1.onrender.com/api/suppliers';
 
 const PaymentStatus = () => {
   const [payments, setPayments] = useState([]);

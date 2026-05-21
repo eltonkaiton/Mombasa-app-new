@@ -6,7 +6,7 @@ import {
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE = 'https://mombasa-backend.onrender.com';
+const API_BASE = 'https://mombasa-backend-1.onrender.com';
 
 export default function FinanceScreen() {
   const [bookings, setBookings] = useState([]);
